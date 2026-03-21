@@ -86,7 +86,7 @@
     const userInput = document.getElementById('user-in');
     const loader = document.getElementById('loader');
     const sidebar = document.getElementById('sidebar');
-    let lastQuery = ""; // Bot Memory
+    let lastQuery = ""; 
 
     const uid = localStorage.getItem('veda_uid') || "V-" + Math.random().toString(36).slice(2,7).toUpperCase();
     localStorage.setItem('veda_uid', uid);
@@ -104,44 +104,44 @@
     // --- MAIN BOT LOGIC ---
     async function getBotReply(msg) {
         let q = msg.toLowerCase().trim();
-    async function getBotReply(msg) {
-        let q = msg.toLowerCase().trim();
 
-        // --- : SMART CALCULATOR (Logic) ---
-        // Yeh kisi bhi number ko calculate kar lega
-        let mathQ = q.replace(/into|multiply|x/g, '*').replace(/plus|add/g, '+').replace(/minus|subtract/g, '-').replace(/divide|bhag/g, '/');
-        let mMatch = mathQ.match(/[0-9\+\-\*\/\.\(\)\%]+/g);
-        if (mMatch && (mathQ.match(/[\+\-\*\/\%]/))) {
+        // 1. SMART CALCULATOR (Logic - Sabse Pehle)
+        let mathQuery = q.replace(/into|multiply|x/g, '*')
+                         .replace(/plus|add/g, '+')
+                         .replace(/minus|subtract/g, '-')
+                         .replace(/divide|bhag/g, '/');
+
+        let mathMatch = mathQuery.match(/[0-9\+\-\*\/\.\(\)\%]+/g);
+        
+        if (mathMatch && (mathQuery.match(/[\+\-\*\/\%]/))) {
             try {
-                let res = eval(mMatch.join(""));
-                if (!isNaN(res)) return `Hisaab: <b>${res}</b>`;
-            } catch (e) {}
+                let finalExp = mathMatch.join(""); 
+                let result = eval(finalExp); 
+                if (!isNaN(result)) {
+                    lastQuery = ""; 
+                    return `Hisaab lagane par jawab hai: <b>${result}</b>`;
+                }
+            } catch (e) { }
         }
 
-      // 1. FAST CHAT SECTION (Greetings & Slangs)
+        // 2. FAST CHAT SECTION (Greetings & Slangs)
         const fastChat = {
             "hi": "Namaste! Main Veda AI hoon. Kaise madad karun?",
             "hello": "Hello! Swagat hai aapka Veda AI mein.",
-            "hlo": "Hello! Swagat hai aapka Veda AI mein.",
-            "hey": "Hey! Kya haal hain?",
             "kaise ho": "Main bilkul badhiya! Aap kaise hain?",
             "radhe radhe": "Radhe Radhe! 💗",
-            "ok": "Theek hai!",
-            "hmm": "Hmm... main sun raha hoon.",
             "bye": "Alvida! Apna khayal rakhein.",
             "bc": "Izzat se baat karein! Badtameezi bardasht nahi ki jayegi.",
             "mc": "Kripya sabhya bhasha ka upyog karein.",
-            "sale": "Bhasha par dhyan dein, main ek AI assistant hoon.",
-            "depression": "Agar aap pareshan hain, toh kripya kisi doctor ya apne kisi pyare se baat karein.",
             "alya": "Alya sometimes hides her feelings in Russian! 😊"
         };
         if (fastChat[q]) { lastQuery = ""; return fastChat[q]; }
 
-        // 2. LIVE DATA (Time/Date)
+        // 3. LIVE DATA (Time/Date)
         if(q.includes("time")) return "Abhi " + new Date().toLocaleTimeString('hi-IN');
         if(q.includes("date")) return "Aaj " + new Date().toLocaleDateString('hi-IN');
 
-        // 3. OFFLINE DATABASE (responses.js)
+        // 4. OFFLINE DATABASE (responses.js)
         if (typeof vedaDatabase !== 'undefined' && vedaDatabase !== null) {
             let match = null; let maxL = 0;
             for (let k in vedaDatabase) {
@@ -153,25 +153,21 @@
             if (match) { lastQuery = ""; return match; }
         }
 
-        // 4. ONLINE SEARCH (Wikipedia & DDG)
+        // 5. ONLINE SEARCH (Wikipedia)
         let topic = q.replace(/kya hai|batao|kaun hai|define/g, "").trim();
         if(topic.length > 2) {
             try {
                 let r = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
                 let d = await r.json();
                 if (d.extract) { lastQuery = ""; return d.extract; }
-                
-                let ddg = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_html=1`);
-                let ddgd = await ddg.json();
-                if (ddgd.AbstractText) { lastQuery = ""; return ddgd.AbstractText; }
             } catch(e) {}
         }
 
-        // 5. SMART FALLBACK (Memory Logic)
+        // 6. SMART FALLBACK (Memory Logic)
         if (q === lastQuery) {
             let gLink = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
             lastQuery = ""; 
-            return `Mujhe abhi bhi sateek jawab nahi mila. Aap yahan click karke Google par dekh sakte hain: <br><br> <a href="${gLink}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">🔍 Search on Google</a>`;
+            return `Mujhe abhi bhi sateek jawab nahi mila. Aap Google par dekh sakte hain: <br><br> <a href="${gLink}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">🔍 Search on Google</a>`;
         } else {
             lastQuery = q; 
             return "Maaf kijiye, mujhe is baare mein jaankari nahi mili. Kya aap thoda vistaar (detail) mein pooch sakte hain?";
