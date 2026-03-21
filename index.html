@@ -104,8 +104,21 @@
     // --- MAIN BOT LOGIC ---
     async function getBotReply(msg) {
         let q = msg.toLowerCase().trim();
+    async function getBotReply(msg) {
+        let q = msg.toLowerCase().trim();
 
-        // 1. FAST CHAT SECTION (Greetings & Slangs)
+        // --- : SMART CALCULATOR (Logic) ---
+        // Yeh kisi bhi number ko calculate kar lega
+        let mathQ = q.replace(/into|multiply|x/g, '*').replace(/plus|add/g, '+').replace(/minus|subtract/g, '-').replace(/divide|bhag/g, '/');
+        let mMatch = mathQ.match(/[0-9\+\-\*\/\.\(\)\%]+/g);
+        if (mMatch && (mathQ.match(/[\+\-\*\/\%]/))) {
+            try {
+                let res = eval(mMatch.join(""));
+                if (!isNaN(res)) return `Hisaab: <b>${res}</b>`;
+            } catch (e) {}
+        }
+
+      // 1. FAST CHAT SECTION (Greetings & Slangs)
         const fastChat = {
             "hi": "Namaste! Main Veda AI hoon. Kaise madad karun?",
             "hello": "Hello! Swagat hai aapka Veda AI mein.",
