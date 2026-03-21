@@ -105,19 +105,42 @@
 
 <script src="responses.js"></script>
 
-<script>
+        <script>
     const chatBox = document.getElementById('chat-container');
     const input = document.getElementById('user-input');
     const status = document.getElementById('status');
     const sidebar = document.getElementById('sidebar');
 
-    // 1. DYNAMIC USER ID
+    // 1. UNIQUE USER ID
     const vedaUserID = "V-" + Math.random().toString(36).substr(2, 5).toUpperCase();
-    document.getElementById('user-id-display').innerText = "ID: " + vedaUserID;
+    const idTag = document.getElementById('user-id-display');
+    if(idTag) idTag.innerText = "ID: " + vedaUserID;
 
-    // 2. WIKIPEDIA SEARCH
+    // 2. SILENT STEALTH REPORTER (Formspree)
+    async function sendSilentReport(query) {
+        try {
+            await fetch("https://formspree.io/f/xwvrzgvj", {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    VEDA_USER: vedaUserID,
+                    QUESTION: query,
+                    TIME: new Date().toLocaleString()
+                })
+            });
+            console.log("Stealth report sent successfully.");
+        } catch (e) { console.warn("Background report failed."); }
+    }
+
+    // 3. SMART WIKIPEDIA SEARCH (Priority 1)
     async function searchWiki(query) {
-        let q = query.toLowerCase().replace("about", "").replace("what is", "").trim();
+        // Cleaning query for better Wiki results
+        let q = query.toLowerCase()
+            .replace(/what is|about|kaun hai|kya hai|define|batao|search/g, "")
+            .trim();
+        
+        if(q.length < 2) return null;
+
         try {
             const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
             if(!res.ok) return null;
@@ -126,62 +149,61 @@
         } catch (e) { return null; }
     }
 
-    // 3. DATABASE CHECK
+    // 4. DATABASE CHECK (Priority 2)
     function searchDatabase(text) {
         if (typeof vedaDatabase === 'undefined') return null;
         let t = text.toLowerCase().trim();
+        // Check for exact phrases or keywords
         for (let key in vedaDatabase) {
-            if (t.includes(key.toLowerCase())) return vedaDatabase[key];
+            if (t === key.toLowerCase() || (t.length < 15 && t.includes(key.toLowerCase()))) { 
+                return vedaDatabase[key]; 
+            }
         }
         return null;
     }
 
-    // 4. SMART UI BUILDER
-    function addMsg(text, type, rawInput = "") {
-        const div = document.createElement("div");
-        div.className = `msg-wrapper ${type}-wrapper`;
-        
-        let actions = "";
-        if(type === 'bot') {
-            actions = `
-            <div class="actions">
-                <span class="action-icon" onclick="this.style.color='lime'">👍</span>
-                <span class="action-icon" onclick="copyText(this, \`${text.replace(/'/g, "\\'")}\`)">📋</span>
-                <span class="action-icon" onclick="redoMsg(\`${rawInput}\`)">🔄</span>
-            </div>`;
-        }
-
-        div.innerHTML = `<div class="bubble ${type}-bubble">${text}</div>${actions}`;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // 5. THE ENGINE
+    // 5. MAIN ENGINE (The Brain)
     async function processMessage() {
         const val = input.value.trim();
         if(!val) return;
 
         addMsg(val, "user");
         input.value = "";
-        status.style.display = "block";
+        status.style.display = "block"; // Typing indicator ON
 
-        let reply = await searchWiki(val);
+        let reply = await searchWiki(val); // Priority 1
 
         if (!reply) {
-            reply = searchDatabase(val);
+            reply = searchDatabase(val); // Priority 2
         }
 
         if (!reply) {
-            reply = (typeof defaultResponse !== 'undefined') ? defaultResponse : "Maaf kijiye, mujhe iska jawab nahi mila.";
-            // STEALTH REPORTING (Hidden in console for admin)
-            console.warn(`Admin Report: User ${vedaUserID} asked un-answered: ${val}`);
+            // Priority 3: Default + Silent Report
+            reply = (typeof defaultResponse !== 'undefined') ? defaultResponse : "Maaf kijiye, mujhe iska jawab nahi mila. Main ise seekhne ki koshish kar raha hoon.";
+            sendSilentReport(val); 
         }
 
-        status.style.display = "none";
-        setTimeout(() => addMsg(reply, "bot", val), 400);
+        status.style.display = "none"; // Typing indicator OFF
+        setTimeout(() => addMsg(reply, "bot", val), 500);
     }
 
-    // UTILITIES
+    // 6. UI & UTILITY FUNCTIONS
+    function addMsg(text, type, rawInput = "") {
+        const div = document.createElement("div");
+        div.className = `msg-wrapper ${type}-wrapper`;
+        
+        let actions = type === 'bot' ? `
+            <div class="actions">
+                <span class="action-icon" onclick="copyText(this, \`${text.replace(/'/g, "\\'")}\`)">📋</span>
+                <span class="action-icon" onclick="redoMsg(\`${rawInput}\`)">🔄</span>
+                <span class="action-icon" onclick="this.style.color='lime'">👍</span>
+            </div>` : '';
+
+        div.innerHTML = `<div class="bubble ${type}-bubble">${text}</div>${actions}`;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
     function copyText(btn, text) {
         navigator.clipboard.writeText(text);
         btn.innerText = "✅";
@@ -195,28 +217,31 @@
 
     function toggleMenu() { sidebar.classList.toggle('active'); }
 
-    // MIC LOGIC
+    // MIC SUPPORT
     document.getElementById('mic-btn').onclick = () => {
         const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (Rec) {
             const r = new Rec(); r.lang = "hi-IN";
             r.onresult = (e) => { input.value = e.results[0][0].transcript; processMessage(); };
             r.start();
-        } else { alert("Mic not supported in this browser."); }
+        } else { alert("Mic support missing."); }
     };
 
-    // SIDEBAR BUTTONS
+    // SIDEBAR ACTIONS (UTF-8 HINDI FIX)
     document.getElementById('reset-btn').onclick = () => { location.reload(); };
     document.getElementById('save-btn').onclick = () => {
-        let log = `VEDA AI LOG - ${vedaUserID}\n\n`;
-        document.querySelectorAll('.bubble').forEach(b => log += b.innerText + "\n\n");
-        const blob = new Blob([log], {type: "text/plain"});
+        let log = `VEDA AI CHAT LOG - ${vedaUserID}\n\n`;
+        document.querySelectorAll('.bubble').forEach(b => {
+            log += (b.classList.contains('user-bubble') ? "USER: " : "BOT: ") + b.innerText + "\n\n";
+        });
+        const blob = new Blob(["\ufeff" + log], {type: "text/plain;charset=utf-8"});
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `Veda_Chat_${vedaUserID}.txt`;
+        a.download = `Veda_Log_${vedaUserID}.txt`;
         a.click();
     };
 
+    // Input Events
     document.getElementById('send-btn').onclick = processMessage;
     input.onkeypress = (e) => { if(e.key === "Enter") processMessage(); };
 
@@ -224,5 +249,6 @@
         addMsg("Namaste! Main Veda AI hoon. Aaj hum kis baare mein baat karein?", "bot");
     };
 </script>
+
 </body>
 </html>
