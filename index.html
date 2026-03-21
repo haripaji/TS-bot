@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI chatbot</title>
+    <title>Veda AI - Multi-Search Assistant</title>
     <style>
         :root { 
             --primary: #7c3aed; 
@@ -11,229 +11,224 @@
             --card: #1e293b; 
             --text: #f1f5f9; 
             --secondary: #94a3b8; 
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --border: rgba(255,255,255,0.1);
         }
         
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        .light-mode {
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --secondary: #64748b;
+            --border: rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: all 0.2s ease; }
         
         body { 
-            margin: 0; 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            height: 100dvh; 
-            display: flex; 
-            overflow: hidden; 
-            padding-bottom: var(--safe-bottom);
+            margin: 0; background: var(--bg); color: var(--text); 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            height: 100dvh; display: flex; overflow: hidden;
         }
 
         /* --- SIDEBAR --- */
-        #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: #0f172a; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; padding: 20px; box-shadow: 15px 0 50px rgba(0,0,0,0.5); }
+        #sidebar { 
+            position: fixed; left: -100%; top: 0; width: 280px; height: 100%; 
+            background: #0f172a; z-index: 1000; padding: 25px; 
+            box-shadow: 20px 0 50px rgba(0,0,0,0.5); color: white;
+        }
         #sidebar.active { left: 0; }
-        .drawer-header { display: flex; align-items: center; margin-bottom: 30px; }
-        .back-btn { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
-        .side-item { width: 100%; padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .side-item { 
+            width: 100%; padding: 14px; margin-bottom: 12px; 
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+            color: white; border-radius: 12px; text-align: left; cursor: pointer;
+            display: flex; align-items: center; gap: 12px; font-size: 14px;
+        }
 
-        /* --- MAIN AREA --- */
-        main { flex: 1; display: flex; flex-direction: column; position: relative; height: 100%; }
-        header { padding: 15px 20px; display: flex; align-items: center; background: rgba(11, 17, 32, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 10; }
-        .menu-icon { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
-        .logo-container { flex: 1; display: flex; flex-direction: column; }
-        .logo { font-weight: 700; letter-spacing: 1px; color: var(--primary); font-size: 1.1rem; display: flex; align-items: center; }
+        /* --- MAIN UI --- */
+        main { flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; }
+        header { 
+            padding: 15px 20px; display: flex; align-items: center; 
+            background: var(--card); border-bottom: 1px solid var(--border);
+        }
+        .menu-btn { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
+        .logo-text { font-weight: 800; color: var(--primary); font-size: 1.2rem; flex: 1; }
+
+        /* --- CHAT AREA --- */
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; padding-bottom: 120px; }
+        .msg { max-width: 85%; display: flex; flex-direction: column; }
+        .user { align-self: flex-end; }
+        .bot { align-self: flex-start; }
+        .bubble { 
+            padding: 12px 18px; border-radius: 20px; font-size: 15px; line-height: 1.6;
+            word-wrap: break-word; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+        .bot .bubble { background: var(--card); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
         
-        /* Green Dot Pulse */
-        .status-dot { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-left: 8px; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .msg-tools { display: flex; gap: 12px; margin-top: 5px; padding: 0 5px; }
+        .tool-icon { font-size: 14px; cursor: pointer; color: var(--secondary); }
 
-        .user-id-tag { font-size: 9px; color: var(--secondary); opacity: 0.6; margin-top: 2px; }
+        /* --- LOADING ANIMATION --- */
+        .typing-bubble { display: none; align-self: flex-start; background: var(--card); padding: 10px 20px; border-radius: 20px; margin-bottom: 10px; border: 1px solid var(--border); }
+        .dot { height: 8px; width: 8px; background: var(--primary); border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 120px; scroll-behavior: smooth; }
-        
-        .msg-wrapper { max-width: 85%; display: flex; flex-direction: column; margin-bottom: 5px; }
-        .user-wrapper { align-self: flex-end; }
-        .bot-wrapper { align-self: flex-start; }
-
-        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; word-wrap: break-word; color: #ffffff !important; display: block !important; visibility: visible !important; }
-        .user-bubble { background: var(--primary); color: white !important; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2); }
-        .bot-bubble { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-
-        .actions { display: flex; gap: 15px; margin-top: 8px; padding-left: 10px; opacity: 1 !important; visibility: visible !important; }
-        .action-icon { font-size: 16px; cursor: pointer; color: var(--secondary); transition: 0.2s; }
-        .action-icon:hover { color: var(--primary); }
-
-        /* --- INPUT --- */
-        .bottom-section { position: absolute; bottom: 0; width: 100%; padding: 10px 20px; background: linear-gradient(transparent, var(--bg) 30%); z-index: 5; pointer-events: none; }
-        .bottom-section > * { pointer-events: auto; }
-        .input-wrapper { background: #1e293b; border-radius: 30px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid rgba(255,255,255,0.1); }
-        input { flex: 1; background: transparent; border: none; color: white; padding: 10px; font-size: 15px; outline: none; }
-        .btn-icon { background: none; border: none; color: var(--secondary); font-size: 18px; cursor: pointer; padding: 8px; }
-        #send-btn { color: var(--primary); font-size: 22px; }
-        .typing { font-size: 11px; color: var(--primary); margin-left: 20px; display: none; margin-bottom: 8px; font-style: italic; }
+        /* --- INPUT AREA --- */
+        .input-area { position: absolute; bottom: 0; width: 100%; padding: 15px 20px; background: linear-gradient(transparent, var(--bg) 50%); }
+        .input-container { background: var(--card); border-radius: 50px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid var(--border); }
+        input { flex: 1; background: none; border: none; color: var(--text); padding: 12px; outline: none; font-size: 16px; }
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--secondary); }
+        #send-btn { color: var(--primary); font-size: 24px; }
     </style>
 </head>
 <body>
 
 <nav id="sidebar">
-    <div class="drawer-header">
-        <span class="back-btn" onclick="toggleMenu()">←</span>
-        <h2 style="margin:0; font-size: 18px;">Veda Settings</h2>
+    <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
+        <h3 style="margin:0">Veda Assistant</h3>
+        <span onclick="toggleMenu()" style="cursor:pointer; font-size:24px;">✕</span>
     </div>
-    <button class="side-item" id="save-btn">💾 Save Conversation</button>
-    <button class="side-item" id="reset-btn">🔄 Reset Chat</button>
-    <button class="side-item" id="feedback-btn">📧 Send Feedback</button>
+    <button class="side-item" id="theme-toggle">🌓 Switch Appearance</button>
+    <button class="side-item" onclick="saveChat()">💾 Save Chat Log</button>
+    <button class="side-item" onclick="clearChat()">🗑️ Clear Conversation</button>
 </nav>
 
 <main>
     <header>
-        <div class="menu-icon" onclick="toggleMenu()">☰</div>
-        <div class="logo-container">
-            <div class="logo">VEDA AI <span class="status-dot"></span></div>
-            <div class="user-id-tag" id="user-id-display">Connecting...</div>
-        </div>
-        <div style="font-size: 10px; opacity: 0.4;">v2.2</div>
+        <div class="menu-btn" onclick="toggleMenu()">☰</div>
+        <div class="logo-text">VEDA AI</div>
+        <div style="font-size:9px; color:var(--secondary)" id="uid">Loading...</div>
     </header>
 
-    <div id="chat-container"></div>
-    <div class="typing" id="status">Veda is thinking...</div>
+    <div id="chat-box"></div>
+    <div class="typing-bubble" id="loader">
+        <div class="dot"></div> <div class="dot"></div> <div class="dot"></div>
+    </div>
 
-    <div class="bottom-section">
-        <div class="input-wrapper">
-            <button class="btn-icon" id="mic-btn">🎤</button>
-            <input type="text" id="user-input" placeholder="Ask Veda anything..." autocomplete="off">
-            <button class="btn-icon" id="send-btn">➤</button>
+    <div class="input-area">
+        <div class="input-container">
+            <button class="icon-btn" id="voice-btn">🎤</button>
+            <input type="text" id="user-in" placeholder="Ask anything..." autocomplete="off">
+            <button class="icon-btn" id="send-btn">➤</button>
         </div>
-        <div style="text-align: center; font-size: 9px; color: var(--secondary); margin-top: 5px; opacity: 0.5;">Created by thoughts sounds</div>
     </div>
 </main>
 
 <script src="responses.js"></script>
 
 <script>
-    const chatBox = document.getElementById('chat-container');
-    const input = document.getElementById('user-input');
-    const status = document.getElementById('status');
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-in');
+    const loader = document.getElementById('loader');
     const sidebar = document.getElementById('sidebar');
 
-    // 1. PERMANENT USER ID
-    let vedaUserID = localStorage.getItem('veda_uid') || "V-" + Math.random().toString(36).substr(2, 5).toUpperCase();
-    localStorage.setItem('veda_uid', vedaUserID);
-    document.getElementById('user-id-display').innerText = "ID: " + vedaUserID;
+    const uid = localStorage.getItem('veda_uid') || "V-" + Math.random().toString(36).slice(2,7).toUpperCase();
+    localStorage.setItem('veda_uid', uid);
+    document.getElementById('uid').innerText = "ID: " + uid;
 
-    let chatHistory = []; 
-    const FORMSPREE_URL = "https://formspree.io/f/xwvrzgvj";
-
+    if(localStorage.getItem('mode') === 'light') document.body.classList.add('light-mode');
     function toggleMenu() { sidebar.classList.toggle('active'); }
 
-    // 2. TEXT TO SPEECH
-    function speak(text) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'hi-IN';
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // 3. ADMIN LOGS
-    async function sendToAdmin(type, content) {
-        try {
-            await fetch(FORMSPREE_URL, {
-                method: 'POST',
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ Log_Type: type, User_ID: vedaUserID, Content: content, Date: new Date().toLocaleString() })
-            });
-            if(type === "FEEDBACK FROM USER") alert("Feedback received!");
-        } catch (e) { console.log("Log error"); }
-    }
-
-    // 4. SEARCH ENGINE
-    async function getResponse(query) {
-        let q = query.toLowerCase().trim();
-        if (chatHistory.length > 0) {
-            if (["such mein", "sach mein", "really"].includes(q)) return "Haan, main bilkul sach keh raha hoon!";
-        }
-        if (q.includes("time")) return "Abhi " + new Date().toLocaleTimeString('hi-IN') + " ho rahe hain.";
-        
-        if (typeof vedaDatabase !== 'undefined') {
-            for (let key in vedaDatabase) {
-                if (q.includes(key.toLowerCase())) return vedaDatabase[key];
-            }
-        }
-        try {
-            let res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
-            let data = await res.json();
-            return data.extract || null;
-        } catch (e) { return null; }
-    }
-
-    // 5. UI DISPLAY
-    function addMsg(text, type, rawInput = "") {
-        const div = document.createElement("div");
-        div.className = `msg-wrapper ${type}-wrapper`;
-        let actions = (type === 'bot') ? `<div class="actions">
-            <span class="action-icon" onclick="speak(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span>
-            <span class="action-icon" onclick="navigator.clipboard.writeText(\`${text}\`)">📋</span>
-        </div>` : '';
-        div.innerHTML = `<div class="bubble ${type}-bubble">${text}</div>${actions}`;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // 6. PROCESSOR
-    async function processMessage() {
-        const val = input.value.trim();
-        if(!val) return;
-        addMsg(val, "user");
-        input.value = "";
-        status.style.display = "block";
-        let reply = await getResponse(val);
-        if (!reply) {
-            reply = "Mujhe iski jaankari nahi hai. Kya main kuch aur bataun?";
-            sendToAdmin("REPORT FROM BOT", val);
-        }
-        chatHistory.push({ user: val, bot: reply });
-        status.style.display = "none";
-        setTimeout(() => addMsg(reply, "bot", val), 100);
-    }
-
-    // --- FIX: MIC FEATURE ---
-    const micBtn = document.getElementById('mic-btn');
-    micBtn.onclick = () => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("Browser Mic support nahi karta.");
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'hi-IN';
-        micBtn.style.color = "red";
-        recognition.onresult = (e) => { input.value = e.results[0][0].transcript; micBtn.style.color = ""; processMessage(); };
-        recognition.onerror = () => { micBtn.style.color = ""; };
-        recognition.start();
-    };
-
-    // --- FIX: SAVE FEATURE ---
-    document.getElementById('save-btn').onclick = () => {
-        const messages = document.querySelectorAll('.bubble');
-        if (messages.length <= 1) return alert("Save karne ke liye chat karein.");
-        
-        let log = `VEDA AI - CHAT LOG\nID: ${vedaUserID}\n\n`;
-        messages.forEach(b => {
-            const sender = b.classList.contains('user-bubble') ? "USER" : "VEDA";
-            log += `${sender}: ${b.innerText}\n\n`;
-        });
-
-        const blob = new Blob(["\ufeff" + log], {type: "text/plain;charset=utf-8"});
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `Veda_Chat_${vedaUserID}.txt`;
-        document.body.appendChild(a); // Mobile fix
-        a.click();
-        document.body.removeChild(a);
+    document.getElementById('theme-toggle').onclick = () => {
+        document.body.classList.toggle('light-mode');
+        localStorage.setItem('mode', document.body.classList.contains('light-mode') ? 'light' : 'dark');
         toggleMenu();
     };
 
-    document.getElementById('reset-btn').onclick = () => { if(confirm("Reset chat?")) { localStorage.clear(); location.reload(); }};
-    document.getElementById('feedback-btn').onclick = () => { let fb = prompt("Feedback:"); if (fb) sendToAdmin("FEEDBACK FROM USER", fb); };
-    document.getElementById('send-btn').onclick = processMessage;
-    input.onkeypress = (e) => { if(e.key === "Enter") processMessage(); };
+    // --- MULTI-DATABASE LOGIC ---
+    async function getBotReply(msg) {
+        let q = msg.toLowerCase().trim();
 
-    window.onload = () => { addMsg("Namaste! Main Veda AI hoon. Kaise madad karun?", "bot"); };
+        // 1. Instant Data
+        if(q.includes("time")) return "Abhi " + new Date().toLocaleTimeString('hi-IN') + " ho rahe hain.";
+        if(q.includes("date") || q.includes("tarikh")) return "Aaj " + new Date().toLocaleDateString('hi-IN') + " hai.";
+
+        // 2. Offline Database (Longest Match)
+        if (typeof vedaDatabase !== 'undefined') {
+            let match = null; let maxL = 0;
+            for (let k in vedaDatabase) {
+                if (q.includes(k.toLowerCase()) && k.length > maxL) {
+                    maxL = k.length; match = vedaDatabase[k];
+                }
+            }
+            if (match) return match;
+        }
+
+        // 3. Wikipedia & DuckDuckGo Search
+        let topic = q.replace(/kya hai|batao|kaun hai|define|kise kehte hain/g, "").trim();
+        if(topic.length > 2) {
+            // Wikipedia
+            try {
+                let r = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
+                let d = await r.json();
+                if (d.extract) return d.extract;
+            } catch(e) {}
+
+            // DuckDuckGo
+            try {
+                let ddg = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_html=1`);
+                let ddgd = await ddg.json();
+                if (ddgd.AbstractText) return ddgd.AbstractText;
+            } catch(e) {}
+        }
+        
+        // 4. Fallback: Google Search Link
+        let gLink = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+        return `Mujhe sateek jawab nahi mila. Aap yahan click karke Google par dekh sakte hain: <br><br> <a href="${gLink}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">🔍 Search on Google</a>`;
+    }
+
+    function addMessage(text, sender) {
+        const wrap = document.createElement('div');
+        wrap.className = `msg ${sender}`;
+        let tools = sender === 'bot' ? `
+            <div class="msg-tools">
+                <span class="tool-icon" onclick="readOut(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span>
+                <span class="tool-icon" onclick="navigator.clipboard.writeText(\`${text}\`)">📋</span>
+            </div>` : '';
+        wrap.innerHTML = `<div class="bubble">${text}</div>${tools}`;
+        chatBox.appendChild(wrap);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function handleSend() {
+        const text = userInput.value.trim();
+        if(!text) return;
+        addMessage(text, 'user');
+        userInput.value = "";
+        loader.style.display = "block";
+        const reply = await getBotReply(text);
+        loader.style.display = "none";
+        setTimeout(() => addMessage(reply, 'bot'), 200);
+    }
+
+    function readOut(t) {
+        window.speechSynthesis.cancel();
+        let u = new SpeechSynthesisUtterance(t); u.lang = 'hi-IN';
+        window.speechSynthesis.speak(u);
+    }
+
+    function saveChat() {
+        let log = "VEDA CHAT HISTORY\n\n";
+        document.querySelectorAll('.bubble').forEach(b => log += (b.parentElement.classList.contains('user') ? "U: " : "V: ") + b.innerText + "\n\n");
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([log])); a.download="VedaChat.txt"; a.click();
+    }
+
+    function clearChat() { if(confirm("Clear chat history?")) { chatBox.innerHTML = ""; addMessage("Chat reset. Namaste!", "bot"); } }
+
+    document.getElementById('send-btn').onclick = handleSend;
+    userInput.onkeydown = (e) => { if(e.key === "Enter") handleSend(); };
+    
+    document.getElementById('voice-btn').onclick = () => {
+        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(!Rec) return alert("Mic not supported.");
+        const r = new Rec(); r.lang = 'hi-IN';
+        r.onresult = (e) => { userInput.value = e.results[0][0].transcript; handleSend(); };
+        r.start();
+    };
+
+    window.onload = () => addMessage("Namaste! Main Veda AI hoon. Main aapki kaise madad kar sakta hoon?", "bot");
 </script>
 </body>
 </html>
