@@ -120,10 +120,10 @@
     const idTag = document.getElementById('user-id-display');
     if(idTag) idTag.innerText = "ID: " + vedaUserID;
 
-    // Pichli baaton ko yaad rakhne ke liye memory
     let chatHistory = []; 
+    const FORMSPREE_URL = "https://formspree.io/f/xwvrzgvj"; // Aapka existing URL
 
-    // 2. TEXT TO SPEECH (Speaker)
+    // 2. TEXT TO SPEECH
     function speak(text) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -131,39 +131,45 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // 3. SMART SEARCH (Context + Wiki + DB)
+    // 3. SILENT REPORT & FEEDBACK ENGINE
+    async function sendToAdmin(type, content) {
+        try {
+            await fetch(FORMSPREE_URL, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Type: type, // "REPORT FROM BOT" ya "FEEDBACK FROM USER"
+                    UserID: vedaUserID,
+                    Message: content,
+                    Time: new Date().toLocaleString()
+                })
+            });
+            if(type === "FEEDBACK FROM USER") alert("Shukriya! Aapka feedback bhej diya gaya hai.");
+        } catch (e) { console.log("Admin log failed."); }
+    }
+
+    // 4. SMART RESPONDER
     async function getResponse(query) {
         let q = query.toLowerCase().trim();
 
-        // --- A. CONTEXT CHECK (Pichli baat ka asar) ---
+        // Context Logic
         if (chatHistory.length > 0) {
-            const lastBotMsg = chatHistory[chatHistory.length - 1].bot.toLowerCase();
-            
-            // Agar user pichli baat par reaction de raha hai
-            if (q === "such mein" || q === "sach mein" || q === "really" || q === "sach") {
-                return "Haan, main bilkul sach keh raha hoon!";
-            }
-            if (q === "kyun" || q === "why") {
-                return "Kyunki internet par di gayi jaankari ke mutabik yahi sahi hai.";
-            }
+            if (["such mein", "sach mein", "really", "sach"].includes(q)) return "Haan, main bilkul sach keh raha hoon!";
+            if (["kyun", "why", "kaise"].includes(q)) return "Kyunki internet aur mere database mein yahi jankari mojud hai.";
         }
 
-        // --- B. TIME & DATE (Live Check) ---
-        if (q.includes("time") || q.includes("samay")) {
-            return "Abhi " + new Date().toLocaleTimeString('hi-IN') + " ho rahe hain.";
-        }
-        if (q.includes("date") || q.includes("tarikh")) {
-            return "Aaj " + new Date().toLocaleDateString('hi-IN') + " hai.";
-        }
+        // Live Info
+        if (q.includes("time") || q.includes("samay")) return "Abhi " + new Date().toLocaleTimeString('hi-IN') + " ho rahe hain.";
+        if (q.includes("date") || q.includes("tarikh")) return "Aaj " + new Date().toLocaleDateString('hi-IN') + " hai.";
 
-        // --- C. DATABASE (responses.js) ---
+        // Database
         if (typeof vedaDatabase !== 'undefined') {
             for (let key in vedaDatabase) {
                 if (q.includes(key.toLowerCase())) return vedaDatabase[key];
             }
         }
 
-        // --- D. WIKIPEDIA (Internet) ---
+        // Wikipedia
         try {
             let cleanQ = q.replace(/what is|about|kya hai|kaun hai/g, "").trim();
             let res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQ || q)}`);
@@ -176,7 +182,7 @@
         } catch (e) { return null; }
     }
 
-    // 4. MAIN PROCESS
+    // 5. PROCESS MESSAGE
     async function processMessage() {
         const val = input.value.trim();
         if(!val) return;
@@ -189,32 +195,32 @@
 
         if (!reply) {
             reply = "Main is baare mein thoda aur seekh raha hoon. Kya hum kisi aur topic par baat karein?";
-            // Silent Report logic yahan rahega
+            sendToAdmin("REPORT FROM BOT", val); // Automatic Report
         }
 
-        // Memory mein save karna
         chatHistory.push({ user: val, bot: reply });
-        if(chatHistory.length > 5) chatHistory.shift(); // Sirf pichli 5 baatein yaad rakhega
+        if(chatHistory.length > 5) chatHistory.shift();
 
         status.style.display = "none";
         setTimeout(() => addMsg(reply, "bot", val), 400);
     }
 
-    // 5. UI BUILDER (Typing + Icons)
+    // 6. UI BUILDER (With Text Fix)
     function addMsg(text, type, rawInput = "") {
         const div = document.createElement("div");
         div.className = `msg-wrapper ${type}-wrapper`;
         const bubble = document.createElement("div");
         bubble.className = `bubble ${type}-bubble`;
+        
+        // Fix: Bubble mein text turant daalna taaki gayab na ho
+        bubble.innerText = text; 
         div.appendChild(bubble);
         chatBox.appendChild(div);
 
         if(type === 'bot') {
-            let i = 0; bubble.innerHTML = "";
-            let interval = setInterval(() => {
-                if (i < text.length) { bubble.innerHTML += text.charAt(i); i++; chatBox.scrollTop = chatBox.scrollHeight; }
-                else { clearInterval(interval); }
-            }, 15);
+            // Sirf visual effect ke liye halka sa fade-in
+            bubble.style.opacity = "0";
+            setTimeout(() => { bubble.style.opacity = "1"; bubble.style.transition = "0.3s"; }, 10);
 
             let actions = `
             <div class="actions">
@@ -223,13 +229,19 @@
                 <span class="action-icon" onclick="input.value='${rawInput}';processMessage()">🔄</span>
             </div>`;
             div.innerHTML += actions;
-        } else {
-            bubble.innerText = text;
         }
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // 6. MIC FIX
+    // 7. FEEDBACK BUTTON LOGIC
+    document.getElementById('feedback-btn').onclick = () => {
+        let feedback = prompt("Veda AI ke baare mein apna feedback likhein:");
+        if (feedback) {
+            sendToAdmin("FEEDBACK FROM USER", feedback);
+        }
+    };
+
+    // 8. MIC & EVENTS
     const micBtn = document.getElementById('mic-btn');
     micBtn.onclick = () => {
         const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -238,6 +250,7 @@
         rec.lang = 'hi-IN';
         micBtn.style.color = "red";
         rec.onresult = (e) => { input.value = e.results[0][0].transcript; micBtn.style.color = ""; processMessage(); };
+        rec.onerror = () => { micBtn.style.color = ""; };
         rec.start();
     };
 
