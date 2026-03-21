@@ -90,7 +90,7 @@
             <div class="logo">VEDA AI <span class="status-dot"></span></div>
             <div class="user-id-tag" id="user-id-display">Connecting...</div>
         </div>
-        <div style="font-size: 10px; opacity: 0.4;">v2.1</div>
+        <div style="font-size: 10px; opacity: 0.4;">v2.2</div>
     </header>
 
     <div id="chat-container"></div>
@@ -122,6 +122,8 @@
     let chatHistory = []; 
     const FORMSPREE_URL = "https://formspree.io/f/xwvrzgvj";
 
+    function toggleMenu() { sidebar.classList.toggle('active'); }
+
     // 2. TEXT TO SPEECH
     function speak(text) {
         window.speechSynthesis.cancel();
@@ -130,72 +132,47 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // 3. ADMIN LOGS (Report & Feedback Separated)
+    // 3. ADMIN LOGS
     async function sendToAdmin(type, content) {
         try {
             await fetch(FORMSPREE_URL, {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    Log_Type: type, // "REPORT FROM BOT" vs "FEEDBACK FROM USER"
-                    User_ID: vedaUserID, 
-                    Content: content,
-                    Date: new Date().toLocaleString()
-                })
+                body: JSON.stringify({ Log_Type: type, User_ID: vedaUserID, Content: content, Date: new Date().toLocaleString() })
             });
-            if(type === "FEEDBACK FROM USER") alert("Shukriya! Aapka feedback bhej diya gaya hai.");
-        } catch (e) { console.log("Admin log failed."); }
+            if(type === "FEEDBACK FROM USER") alert("Feedback received!");
+        } catch (e) { console.log("Log error"); }
     }
 
-    // 4. SEARCH ENGINE (Context + Wiki + DB)
+    // 4. SEARCH ENGINE
     async function getResponse(query) {
         let q = query.toLowerCase().trim();
-        
-        // --- Context Logic ---
         if (chatHistory.length > 0) {
-            if (["such mein", "sach mein", "really", "sach"].includes(q)) return "Haan, main bilkul sach keh raha hoon!";
-            if (["kyun", "why", "kaise"].includes(q)) return "Kyunki mere database aur internet ki jaankari yahi kehti hai.";
+            if (["such mein", "sach mein", "really"].includes(q)) return "Haan, main bilkul sach keh raha hoon!";
         }
-
-        // --- Live Info ---
-        if (q.includes("time") || q.includes("samay")) return "Abhi " + new Date().toLocaleTimeString('hi-IN') + " ho rahe hain.";
-        if (q.includes("date") || q.includes("tarikh")) return "Aaj " + new Date().toLocaleDateString('hi-IN') + " hai.";
+        if (q.includes("time")) return "Abhi " + new Date().toLocaleTimeString('hi-IN') + " ho rahe hain.";
         
-        // --- Database (responses.js) ---
         if (typeof vedaDatabase !== 'undefined') {
             for (let key in vedaDatabase) {
                 if (q.includes(key.toLowerCase())) return vedaDatabase[key];
             }
         }
-
-        // --- Wikipedia (Internet) ---
         try {
-            let cleanQ = q.replace(/what is|kaun hai|kya hai|define/g, "").trim();
-            let res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQ || q)}`);
+            let res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
             let data = await res.json();
-            if (data.extract) return data.extract;
-            
-            // English Backup
-            res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQ || q)}`);
-            data = await res.json();
             return data.extract || null;
         } catch (e) { return null; }
     }
 
-    // 5. UI DISPLAY (Fixed Visibility)
+    // 5. UI DISPLAY
     function addMsg(text, type, rawInput = "") {
         const div = document.createElement("div");
         div.className = `msg-wrapper ${type}-wrapper`;
-        
-        let actions = (type === 'bot') ? `
-            <div class="actions">
-                <span class="action-icon" title="Suno" onclick="speak(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span>
-                <span class="action-icon" title="Copy" onclick="navigator.clipboard.writeText(\`${text}\`)">📋</span>
-                <span class="action-icon" title="Retry" onclick="input.value='${rawInput}';processMessage()">🔄</span>
-            </div>` : '';
-
+        let actions = (type === 'bot') ? `<div class="actions">
+            <span class="action-icon" onclick="speak(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span>
+            <span class="action-icon" onclick="navigator.clipboard.writeText(\`${text}\`)">📋</span>
+        </div>` : '';
         div.innerHTML = `<div class="bubble ${type}-bubble">${text}</div>${actions}`;
-        
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -204,66 +181,59 @@
     async function processMessage() {
         const val = input.value.trim();
         if(!val) return;
-
         addMsg(val, "user");
         input.value = "";
         status.style.display = "block";
-
         let reply = await getResponse(val);
-
         if (!reply) {
-            reply = "Main iske baare mein abhi seekh raha hoon. Kya aap kuch aur poochhna chahte hain?";
+            reply = "Mujhe iski jaankari nahi hai. Kya main kuch aur bataun?";
             sendToAdmin("REPORT FROM BOT", val);
         }
-
         chatHistory.push({ user: val, bot: reply });
-        if(chatHistory.length > 5) chatHistory.shift(); // Memory limit
-
         status.style.display = "none";
         setTimeout(() => addMsg(reply, "bot", val), 100);
     }
 
-    // 7. BUTTONS & MIC
-    document.getElementById('feedback-btn').onclick = () => {
-        let fb = prompt("Veda AI ke baare mein apna feedback likhein:");
-        if (fb) sendToAdmin("FEEDBACK FROM USER", fb);
-    };
-
+    // --- FIX: MIC FEATURE ---
     const micBtn = document.getElementById('mic-btn');
     micBtn.onclick = () => {
-        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Rec) return alert("Aapka browser mic support nahi karta.");
-        const r = new Rec(); r.lang = 'hi-IN';
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert("Browser Mic support nahi karta.");
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'hi-IN';
         micBtn.style.color = "red";
-        r.onresult = (e) => { input.value = e.results[0][0].transcript; micBtn.style.color = ""; processMessage(); };
-        r.onerror = () => { micBtn.style.color = ""; };
-        r.start();
+        recognition.onresult = (e) => { input.value = e.results[0][0].transcript; micBtn.style.color = ""; processMessage(); };
+        recognition.onerror = () => { micBtn.style.color = ""; };
+        recognition.start();
     };
 
-    document.getElementById('send-btn').onclick = processMessage;
-    input.onkeypress = (e) => { if(e.key === "Enter") processMessage(); };
-    function toggleMenu() { sidebar.classList.toggle('active'); }
-    
-    document.getElementById('reset-btn').onclick = () => { 
-        if(confirm("Kya aap poori chat saaf karna chahte hain?")) {
-            localStorage.removeItem('veda_uid'); // New ID on reset
-            location.reload(); 
-        }
-    };
-
+    // --- FIX: SAVE FEATURE ---
     document.getElementById('save-btn').onclick = () => {
-        let log = `VEDA AI CONVERSATION\nUser ID: ${vedaUserID}\n\n`;
-        document.querySelectorAll('.bubble').forEach(b => {
-            log += (b.classList.contains('user-bubble') ? "USER: " : "BOT: ") + b.innerText + "\n\n";
+        const messages = document.querySelectorAll('.bubble');
+        if (messages.length <= 1) return alert("Save karne ke liye chat karein.");
+        
+        let log = `VEDA AI - CHAT LOG\nID: ${vedaUserID}\n\n`;
+        messages.forEach(b => {
+            const sender = b.classList.contains('user-bubble') ? "USER" : "VEDA";
+            log += `${sender}: ${b.innerText}\n\n`;
         });
+
         const blob = new Blob(["\ufeff" + log], {type: "text/plain;charset=utf-8"});
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = `Veda_Chat_${vedaUserID}.txt`;
+        document.body.appendChild(a); // Mobile fix
         a.click();
+        document.body.removeChild(a);
+        toggleMenu();
     };
 
-    window.onload = () => { addMsg("Namaste! Main Veda AI hoon. Main aapki kaise madad kar sakta hoon?", "bot"); };
+    document.getElementById('reset-btn').onclick = () => { if(confirm("Reset chat?")) { localStorage.clear(); location.reload(); }};
+    document.getElementById('feedback-btn').onclick = () => { let fb = prompt("Feedback:"); if (fb) sendToAdmin("FEEDBACK FROM USER", fb); };
+    document.getElementById('send-btn').onclick = processMessage;
+    input.onkeypress = (e) => { if(e.key === "Enter") processMessage(); };
+
+    window.onload = () => { addMsg("Namaste! Main Veda AI hoon. Kaise madad karun?", "bot"); };
 </script>
 </body>
 </html>
