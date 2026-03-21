@@ -2,54 +2,128 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Veda AI - Gemini Edition</title>
     <style>
-        :root { --primary: #7c3aed; --bg: #0b1120; --card: #1e293b; --text: #f1f5f9; --secondary: #94a3b8; }
+        :root { 
+            --primary: #7c3aed; 
+            --bg: #0b1120; 
+            --card: #1e293b; 
+            --text: #f1f5f9; 
+            --secondary: #94a3b8; 
+            /* Mobile safe areas handling */
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', Roboto, sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* FIX: Using dvh (dynamic viewport height) for full screen on mobile */
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            height: 100dvh; /* Dynamic Height for dynamic UI */
+            display: flex; 
+            overflow: hidden; 
+            padding-bottom: var(--safe-bottom); /* Safe area bottom spacing */
+        }
 
-        /* --- 1. SIDEBAR / DRAWER --- */
+        /* --- 1. SIDEBAR / DRAWER (Existing - Good) --- */
         #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: #0f172a; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; padding: 20px; box-shadow: 15px 0 50px rgba(0,0,0,0.5); }
         #sidebar.active { left: 0; }
         .drawer-header { display: flex; align-items: center; margin-bottom: 30px; }
         .back-btn { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
         .side-item { width: 100%; padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 
-        /* --- 2. MAIN CHAT AREA --- */
-        main { flex: 1; display: flex; flex-direction: column; position: relative; }
-        header { padding: 15px 20px; display: flex; align-items: center; background: rgba(11, 17, 32, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .menu-icon { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
-        .logo { flex: 1; font-weight: 700; letter-spacing: 1px; color: var(--primary); }
-
-        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 120px; }
+        /* --- 2. MAIN CHAT AREA (Adjusted) --- */
+        main { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            height: 100%; 
+        }
         
-        /* Message Bubbles */
+        header { 
+            padding: 15px 20px; 
+            display: flex; 
+            align-items: center; 
+            background: rgba(11, 17, 32, 0.8); 
+            backdrop-filter: blur(10px); 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            z-index: 10;
+        }
+        .menu-icon { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
+        .logo { flex: 1; font-weight: 700; letter-spacing: 1px; color: var(--primary); font-size: 1.1rem; }
+
+        /* Adjusted padding to avoid overlap with floating input */
+        #chat-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            padding-bottom: 110px; /* Space for the floating input and footer */
+            scroll-behavior: smooth;
+        }
+        
+        /* Message Bubbles (Existing - Good) */
         .msg-wrapper { max-width: 85%; display: flex; flex-direction: column; }
         .user-wrapper { align-self: flex-end; }
         .bot-wrapper { align-self: flex-start; }
 
-        .bubble { padding: 14px 18px; border-radius: 20px; font-size: 16px; line-height: 1.5; position: relative; }
-        .user-bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+        .bubble { padding: 14px 18px; border-radius: 20px; font-size: 16px; line-height: 1.5; position: relative; word-wrap: break-word; }
+        .user-bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.15); }
         .bot-bubble { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-bottom-left-radius: 4px; }
 
-        /* Gemini Style Action Icons */
+        /* Gemini Style Action Icons (Existing - Good) */
         .actions { display: flex; gap: 15px; margin-top: 8px; padding-left: 5px; opacity: 0.6; }
         .action-icon { font-size: 14px; cursor: pointer; transition: 0.2s; }
         .action-icon:hover { opacity: 1; color: var(--primary); }
 
-        /* --- 3. FLOATING INPUT & FOOTER --- */
-        .bottom-section { position: absolute; bottom: 0; width: 100%; padding: 10px 20px 5px 20px; background: linear-gradient(transparent, var(--bg) 40%); }
-        .input-wrapper { background: #2d3748; border-radius: 30px; display: flex; align-items: center; padding: 6px 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        /* --- 3. FIX: FLOATING INPUT & FOOTER POSITIONING --- */
+        .bottom-section { 
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            padding: 10px 20px 10px 20px; /* Normal padding for the sections */
+            background: linear-gradient(transparent, var(--bg) 20%); /* Smoother gradient */
+            z-index: 5;
+            pointer-events: none; /* Let clicks pass through the padding area to the input wrapper */
+        }
+        
+        /* Only the wrapper should capture pointer events */
+        .bottom-section > * { pointer-events: auto; }
+
+        .input-wrapper { 
+            background: #2d3748; 
+            border-radius: 30px; 
+            display: flex; 
+            align-items: center; 
+            padding: 6px 15px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5); 
+            transition: border-color 0.2s;
+        }
+        
         input { flex: 1; background: transparent; border: none; color: white; padding: 12px 10px; font-size: 16px; outline: none; }
         .btn-icon { background: none; border: none; color: var(--secondary); font-size: 20px; cursor: pointer; padding: 8px; }
-        #send-btn { color: var(--primary); }
+        #send-btn { color: var(--primary); font-size: 22px; }
 
-        .footer-branding { text-align: center; font-size: 11px; color: var(--secondary); margin-top: 8px; opacity: 0.7; letter-spacing: 0.5px; }
+        .footer-branding { 
+            text-align: center; 
+            font-size: 11px; 
+            color: var(--secondary); 
+            margin-top: 10px; 
+            opacity: 0.7; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 2px; /* Small gap above safe area/screen edge */
+        }
 
-        /* Typing Indicator */
-        .typing { font-size: 12px; color: var(--primary); margin-left: 20px; display: none; margin-bottom: 10px; }
+        /* Typing Indicator (Existing - Good) */
+        .typing { font-size: 12px; color: var(--primary); margin-left: 20px; display: none; margin-bottom: 10px; z-index: 5;}
     </style>
 </head>
 <body>
@@ -84,7 +158,7 @@
         </div>
     </div>
 
-    <div class="typing" id="status">Veda is searching internet...</div>
+    <div class="typing" id="status" style="position: absolute; bottom: 95px;">Veda is searching internet...</div>
 
     <div class="bottom-section">
         <div class="input-wrapper">
@@ -98,18 +172,26 @@
 
 <script>
     const sidebar = document.getElementById('sidebar');
-    const input = document.getElementById('user-input');
+    const inputField = document.getElementById('user-input');
 
     function toggleMenu() {
         sidebar.classList.toggle('active');
     }
 
-    // Input animation focus
-    input.addEventListener('focus', () => {
+    // Input focus styling
+    inputField.addEventListener('focus', () => {
         document.querySelector('.input-wrapper').style.borderColor = 'var(--primary)';
     });
-    input.addEventListener('blur', () => {
+    inputField.addEventListener('blur', () => {
         document.querySelector('.input-wrapper').style.borderColor = 'rgba(255,255,255,0.1)';
+    });
+    
+    // Simple demo for send button (actual logic to be added later)
+    document.getElementById('send-btn').addEventListener('click', () => {
+        if(inputField.value.trim() !== "") {
+            // Here you'll add message processing logic
+            inputField.value = "";
+        }
     });
 </script>
 
