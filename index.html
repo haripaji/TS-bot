@@ -11,119 +11,60 @@
             --card: #1e293b; 
             --text: #f1f5f9; 
             --secondary: #94a3b8; 
-            /* Mobile safe areas handling */
             --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* FIX: Using dvh (dynamic viewport height) for full screen on mobile */
         body { 
             margin: 0; 
             background: var(--bg); 
             color: var(--text); 
             font-family: 'Segoe UI', Roboto, sans-serif; 
-            height: 100dvh; /* Dynamic Height for dynamic UI */
+            height: 100dvh; 
             display: flex; 
             overflow: hidden; 
-            padding-bottom: var(--safe-bottom); /* Safe area bottom spacing */
+            padding-bottom: var(--safe-bottom);
         }
 
-        /* --- 1. SIDEBAR / DRAWER (Existing - Good) --- */
+        /* --- SIDEBAR --- */
         #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: #0f172a; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; padding: 20px; box-shadow: 15px 0 50px rgba(0,0,0,0.5); }
         #sidebar.active { left: 0; }
         .drawer-header { display: flex; align-items: center; margin-bottom: 30px; }
         .back-btn { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
-        .side-item { width: 100%; padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .side-item { width: 100%; padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
 
-        /* --- 2. MAIN CHAT AREA (Adjusted) --- */
-        main { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            position: relative; 
-            height: 100%; 
-        }
-        
-        header { 
-            padding: 15px 20px; 
-            display: flex; 
-            align-items: center; 
-            background: rgba(11, 17, 32, 0.8); 
-            backdrop-filter: blur(10px); 
-            border-bottom: 1px solid rgba(255,255,255,0.05); 
-            z-index: 10;
-        }
+        /* --- MAIN AREA --- */
+        main { flex: 1; display: flex; flex-direction: column; position: relative; height: 100%; }
+        header { padding: 15px 20px; display: flex; align-items: center; background: rgba(11, 17, 32, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 10; }
         .menu-icon { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
-        .logo { flex: 1; font-weight: 700; letter-spacing: 1px; color: var(--primary); font-size: 1.1rem; }
+        .logo-container { flex: 1; display: flex; flex-direction: column; }
+        .logo { font-weight: 700; letter-spacing: 1px; color: var(--primary); font-size: 1.1rem; }
+        .user-id-tag { font-size: 9px; color: var(--secondary); opacity: 0.6; margin-top: 2px; }
 
-        /* Adjusted padding to avoid overlap with floating input */
-        #chat-container { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-            padding-bottom: 110px; /* Space for the floating input and footer */
-            scroll-behavior: smooth;
-        }
+        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 120px; scroll-behavior: smooth; }
         
-        /* Message Bubbles (Existing - Good) */
         .msg-wrapper { max-width: 85%; display: flex; flex-direction: column; }
         .user-wrapper { align-self: flex-end; }
         .bot-wrapper { align-self: flex-start; }
 
-        .bubble { padding: 14px 18px; border-radius: 20px; font-size: 16px; line-height: 1.5; position: relative; word-wrap: break-word; }
-        .user-bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.15); }
+        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.5; position: relative; word-wrap: break-word; }
+        .user-bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2); }
         .bot-bubble { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-bottom-left-radius: 4px; }
 
-        /* Gemini Style Action Icons (Existing - Good) */
-        .actions { display: flex; gap: 15px; margin-top: 8px; padding-left: 5px; opacity: 0.6; }
-        .action-icon { font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .actions { display: flex; gap: 12px; margin-top: 6px; padding-left: 5px; opacity: 0.5; }
+        .action-icon { font-size: 13px; cursor: pointer; transition: 0.2s; }
         .action-icon:hover { opacity: 1; color: var(--primary); }
 
-        /* --- 3. FIX: FLOATING INPUT & FOOTER POSITIONING --- */
-        .bottom-section { 
-            position: absolute; 
-            bottom: 0; 
-            width: 100%; 
-            padding: 10px 20px 10px 20px; /* Normal padding for the sections */
-            background: linear-gradient(transparent, var(--bg) 20%); /* Smoother gradient */
-            z-index: 5;
-            pointer-events: none; /* Let clicks pass through the padding area to the input wrapper */
-        }
-        
-        /* Only the wrapper should capture pointer events */
+        /* --- INPUT & FOOTER --- */
+        .bottom-section { position: absolute; bottom: 0; width: 100%; padding: 10px 20px; background: linear-gradient(transparent, var(--bg) 30%); z-index: 5; pointer-events: none; }
         .bottom-section > * { pointer-events: auto; }
-
-        .input-wrapper { 
-            background: #2d3748; 
-            border-radius: 30px; 
-            display: flex; 
-            align-items: center; 
-            padding: 6px 15px; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5); 
-            transition: border-color 0.2s;
-        }
-        
-        input { flex: 1; background: transparent; border: none; color: white; padding: 12px 10px; font-size: 16px; outline: none; }
-        .btn-icon { background: none; border: none; color: var(--secondary); font-size: 20px; cursor: pointer; padding: 8px; }
+        .input-wrapper { background: #1e293b; border-radius: 30px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+        input { flex: 1; background: transparent; border: none; color: white; padding: 10px; font-size: 15px; outline: none; }
+        .btn-icon { background: none; border: none; color: var(--secondary); font-size: 18px; cursor: pointer; padding: 8px; }
         #send-btn { color: var(--primary); font-size: 22px; }
-
-        .footer-branding { 
-            text-align: center; 
-            font-size: 11px; 
-            color: var(--secondary); 
-            margin-top: 10px; 
-            opacity: 0.7; 
-            letter-spacing: 0.5px; 
-            margin-bottom: 2px; /* Small gap above safe area/screen edge */
-        }
-
-        /* Typing Indicator (Existing - Good) */
-        .typing { font-size: 12px; color: var(--primary); margin-left: 20px; display: none; margin-bottom: 10px; z-index: 5;}
+        .footer-branding { text-align: center; font-size: 10px; color: var(--secondary); margin-top: 8px; opacity: 0.6; letter-spacing: 0.5px; }
+        .typing { font-size: 11px; color: var(--primary); margin-left: 20px; display: none; margin-bottom: 8px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -131,65 +72,62 @@
 <nav id="sidebar">
     <div class="drawer-header">
         <span class="back-btn" onclick="toggleMenu()">←</span>
-        <h2 style="margin:0; font-size: 20px;">Settings</h2>
+        <h2 style="margin:0; font-size: 18px;">Veda Settings</h2>
     </div>
-    <button class="side-item">💾 Save Chat</button>
-    <button class="side-item">🔄 Reset Conversation</button>
-    <button class="side-item">📧 Feedback</button>
+    <button class="side-item" id="save-btn">💾 Save Conversation</button>
+    <button class="side-item" id="reset-btn">🔄 Reset Chat</button>
+    <button class="side-item" id="feedback-btn">📧 Send Feedback</button>
 </nav>
 
 <main>
     <header>
         <div class="menu-icon" onclick="toggleMenu()">☰</div>
-        <div class="logo">VEDA AI</div>
-        <div style="font-size: 10px; opacity: 0.5;">v2.0</div>
+        <div class="logo-container">
+            <div class="logo">VEDA AI</div>
+            <div class="user-id-tag" id="user-id-display">Connecting...</div>
+        </div>
+        <div style="font-size: 10px; opacity: 0.4;">v2.0</div>
     </header>
 
-    <div id="chat-container">
-        <div class="msg-wrapper bot-wrapper">
-            <div class="bubble bot-bubble">Namaste! Main Veda AI hoon. Aaj hum kis baare mein baat karein?</div>
-            <div class="actions">
-                <span class="action-icon" title="Like">👍</span>
-                <span class="action-icon" title="Dislike">👎</span>
-                <span class="action-icon" title="Copy">📋</span>
-                <span class="action-icon" title="Redo">🔄</span>
-                <span class="action-icon" title="More">⋮</span>
-            </div>
-        </div>
-    </div>
+    <div id="chat-container"></div>
 
-    <div class="typing" id="status" style="position: absolute; bottom: 95px;">Veda is searching internet...</div>
+    <div class="typing" id="status" style="position: absolute; bottom: 90px;">Veda is thinking...</div>
 
     <div class="bottom-section">
         <div class="input-wrapper">
-            <button class="btn-icon">🎤</button>
-            <input type="text" id="user-input" placeholder="Ask anything..." autocomplete="off">
+            <button class="btn-icon" id="mic-btn">🎤</button>
+            <input type="text" id="user-input" placeholder="Ask Veda anything..." autocomplete="off">
             <button class="btn-icon" id="send-btn">➤</button>
         </div>
         <div class="footer-branding">Created by thoughts sounds</div>
     </div>
 </main>
 
+<script src="responses.js"></script>
 
-    <script>
-    // Elements ko sahi se pakadna
+<script>
     const chatBox = document.getElementById('chat-container');
     const input = document.getElementById('user-input');
     const status = document.getElementById('status');
+    const sidebar = document.getElementById('sidebar');
 
-    // 1. Wikipedia Search (Online)
+    // 1. DYNAMIC USER ID
+    const vedaUserID = "V-" + Math.random().toString(36).substr(2, 5).toUpperCase();
+    document.getElementById('user-id-display').innerText = "ID: " + vedaUserID;
+
+    // 2. WIKIPEDIA SEARCH
     async function searchWiki(query) {
-        let q = query.toLowerCase().replace("about", "").trim();
+        let q = query.toLowerCase().replace("about", "").replace("what is", "").trim();
         try {
             const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+            if(!res.ok) return null;
             const data = await res.json();
             return data.extract || null;
         } catch (e) { return null; }
     }
 
-    // 2. Database Check (Offline/Local)
+    // 3. DATABASE CHECK
     function searchDatabase(text) {
-        // Agar responses.js missing hai toh error nahi aayega
         if (typeof vedaDatabase === 'undefined') return null;
         let t = text.toLowerCase().trim();
         for (let key in vedaDatabase) {
@@ -198,33 +136,35 @@
         return null;
     }
 
-    // 3. Message Function (With All Buttons)
-    function addMsg(text, type, raw) {
+    // 4. SMART UI BUILDER
+    function addMsg(text, type, rawInput = "") {
         const div = document.createElement("div");
         div.className = `msg-wrapper ${type}-wrapper`;
         
-        let actions = type === 'bot' ? `
+        let actions = "";
+        if(type === 'bot') {
+            actions = `
             <div class="actions">
-                <span class="action-icon" onclick="navigator.clipboard.writeText('${text}'); alert('Copied!')">📋</span>
-                <span class="action-icon" onclick="input.value='${raw}';processMessage();">🔄</span>
                 <span class="action-icon" onclick="this.style.color='lime'">👍</span>
-            </div>` : '';
+                <span class="action-icon" onclick="copyText(this, \`${text.replace(/'/g, "\\'")}\`)">📋</span>
+                <span class="action-icon" onclick="redoMsg(\`${rawInput}\`)">🔄</span>
+            </div>`;
+        }
 
         div.innerHTML = `<div class="bubble ${type}-bubble">${text}</div>${actions}`;
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // 4. Sabse Main Logic (The Engine)
+    // 5. THE ENGINE
     async function processMessage() {
         const val = input.value.trim();
         if(!val) return;
 
         addMsg(val, "user");
         input.value = "";
-        status.style.display = "block"; // Typing...
+        status.style.display = "block";
 
-        // FLOW: 1. Wikipedia -> 2. responses.js -> 3. Default
         let reply = await searchWiki(val);
 
         if (!reply) {
@@ -233,21 +173,56 @@
 
         if (!reply) {
             reply = (typeof defaultResponse !== 'undefined') ? defaultResponse : "Maaf kijiye, mujhe iska jawab nahi mila.";
+            // STEALTH REPORTING (Hidden in console for admin)
+            console.warn(`Admin Report: User ${vedaUserID} asked un-answered: ${val}`);
         }
 
         status.style.display = "none";
-        setTimeout(() => addMsg(reply, "bot", val), 500);
+        setTimeout(() => addMsg(reply, "bot", val), 400);
     }
 
-    // Buttons ko Activate karna
+    // UTILITIES
+    function copyText(btn, text) {
+        navigator.clipboard.writeText(text);
+        btn.innerText = "✅";
+        setTimeout(() => btn.innerText = "📋", 1500);
+    }
+
+    function redoMsg(txt) {
+        input.value = txt;
+        processMessage();
+    }
+
+    function toggleMenu() { sidebar.classList.toggle('active'); }
+
+    // MIC LOGIC
+    document.getElementById('mic-btn').onclick = () => {
+        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (Rec) {
+            const r = new Rec(); r.lang = "hi-IN";
+            r.onresult = (e) => { input.value = e.results[0][0].transcript; processMessage(); };
+            r.start();
+        } else { alert("Mic not supported in this browser."); }
+    };
+
+    // SIDEBAR BUTTONS
+    document.getElementById('reset-btn').onclick = () => { location.reload(); };
+    document.getElementById('save-btn').onclick = () => {
+        let log = `VEDA AI LOG - ${vedaUserID}\n\n`;
+        document.querySelectorAll('.bubble').forEach(b => log += b.innerText + "\n\n");
+        const blob = new Blob([log], {type: "text/plain"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `Veda_Chat_${vedaUserID}.txt`;
+        a.click();
+    };
+
     document.getElementById('send-btn').onclick = processMessage;
     input.onkeypress = (e) => { if(e.key === "Enter") processMessage(); };
-    function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
+
+    window.onload = () => {
+        addMsg("Namaste! Main Veda AI hoon. Aaj hum kis baare mein baat karein?", "bot");
+    };
 </script>
-
-
-
-
 </body>
 </html>
-
