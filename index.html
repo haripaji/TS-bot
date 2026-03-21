@@ -93,6 +93,8 @@
     <button class="side-item" id="theme-toggle">🌓 Switch Appearance</button>
     <button class="side-item" onclick="saveChat()">💾 Save Chat Log</button>
     <button class="side-item" onclick="clearChat()">🗑️ Clear Conversation</button>
+    <button class="side-item" onclick="sendFeedback()">📧 Send Feedback</button>
+
 </nav>
 
 <main>
@@ -217,6 +219,31 @@
 
     function clearChat() { if(confirm("Clear chat history?")) { chatBox.innerHTML = ""; addMessage("Chat reset. Namaste!", "bot"); } }
 
+    // --- FEEDBACK SYSTEM ---
+async function sendFeedback() {
+    let fb = prompt("Veda AI ke liye apna feedback ya sujhav (suggestion) likhein:");
+    if (fb && fb.trim() !== "") {
+        try {
+            const FORMSPREE_URL = "https://formspree.io/f/xwvrzgvj"; // Aapka Formspree ID
+            await fetch(FORMSPREE_URL, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    Type: "USER_FEEDBACK", 
+                    User_ID: uid, 
+                    Message: fb, 
+                    Date: new Date().toLocaleString() 
+                })
+            });
+            alert("Shukriya! Aapka feedback admin (Thoughts Sounds) ko bhej diya gaya hai.");
+            toggleMenu(); // Sidebar band karne ke liye
+        } catch (e) {
+            alert("Feedback bhejne mein dikat hui. Baad mein koshish karein.");
+        }
+    }
+}
+
+    
     document.getElementById('send-btn').onclick = handleSend;
     userInput.onkeydown = (e) => { if(e.key === "Enter") handleSend(); };
     
