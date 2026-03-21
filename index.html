@@ -170,38 +170,19 @@
     </div>
 </main>
 
-<script>
-    const sidebar = document.getElementById('sidebar');
-    const inputField = document.getElementById('user-input');
 
-    function toggleMenu() {
-        sidebar.classList.toggle('active');
-    }
-
-    // Input focus styling
-    inputField.addEventListener('focus', () => {
-        document.querySelector('.input-wrapper').style.borderColor = 'var(--primary)';
-    });
-    inputField.addEventListener('blur', () => {
-        document.querySelector('.input-wrapper').style.borderColor = 'rgba(255,255,255,0.1)';
-    });
-    
-    // Simple demo for send button (actual logic to be added later)
-    document.getElementById('send-btn').addEventListener('click', () => {
-        if(inputField.value.trim() !== "") {
-            // Here you'll add message processing logic
-            inputField.value = "";
-        }
-    });
 <script>
+    // Variables ko sahi se connect karna
     const chatContainer = document.getElementById('chat-container');
     const inputField = document.getElementById('user-input');
     const statusLabel = document.getElementById('status');
     const sidebar = document.getElementById('sidebar');
 
-    function toggleMenu() { sidebar.classList.toggle('active'); }
+    function toggleMenu() { 
+        if(sidebar) sidebar.classList.toggle('active'); 
+    }
 
-    // --- 1. WIKIPEDIA API (With 5s Timeout) ---
+    // --- 1. WIKIPEDIA API ---
     async function fetchOnline(query) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -214,41 +195,50 @@
         } catch (e) { return null; }
     }
 
-    // --- 2. RESPONSES.JS HANDLER (Dynamic) ---
+    // --- 2. RESPONSES.JS CHECK ---
     function checkDatabase(text) {
-        text = text.toLowerCase().trim();
+        let t = text.toLowerCase().trim();
         if (typeof vedaDatabase !== 'undefined') {
             for (let key in vedaDatabase) {
-                if (text.includes(key.toLowerCase())) return vedaDatabase[key];
+                if (t.includes(key.toLowerCase())) return vedaDatabase[key];
             }
         }
         return null;
     }
 
-    // --- 3. UI UTILITIES (Copy, Redo, Like) ---
+    // --- 3. UI BUTTONS (Copy, Redo, Like) ---
     function copyText(btn, text) {
         navigator.clipboard.writeText(text);
+        let oldIcon = btn.innerText;
         btn.innerText = "✅";
-        setTimeout(() => btn.innerText = "📋", 2000);
+        setTimeout(() => btn.innerText = oldIcon, 2000);
     }
 
     function redoTask(text) {
-        inputField.value = text;
-        processMessage();
+        if(inputField) {
+            inputField.value = text;
+            processMessage();
+        }
     }
 
     // --- 4. MESSAGE GENERATOR ---
     function addMsg(text, type, rawInput = "") {
+        if(!chatContainer) return;
+        
         const wrapper = document.createElement("div");
         wrapper.className = `msg-wrapper ${type}-wrapper`;
         
-        const actionsHTML = type === 'bot' ? `
+        // Buttons sirf bot message ke liye
+        let actionsHTML = "";
+        if(type === 'bot') {
+            actionsHTML = `
             <div class="actions">
                 <span class="action-icon" onclick="this.style.color='#22c55e'">👍</span>
                 <span class="action-icon" onclick="this.style.color='#ef4444'">👎</span>
-                <span class="action-icon" onclick="copyText(this, \`${text.replace(/'/g, "\\'")}\`)">📋</span>
-                <span class="action-icon" onclick="redoTask(\`${rawInput}\`)">🔄</span>
-            </div>` : '';
+                <span class="action-icon" onclick="copyText(this, \`${text.replace(/`/g, "\\`").replace(/\n/g, " ")}\`)">📋</span>
+                <span class="action-icon" onclick="redoTask(\`${rawInput.replace(/`/g, "\\`")}\`)">🔄</span>
+            </div>`;
+        }
 
         wrapper.innerHTML = `
             <div class="bubble ${type}-bubble">${text}</div>
@@ -258,63 +248,90 @@
         chatContainer.appendChild(wrapper);
         chatContainer.scrollTop = chatContainer.scrollHeight;
 
+        // Auto Voice
         if (type === "bot") {
-            const speech = new SpeechSynthesisUtterance(text.replace(/<[^>]*>?/gm, ''));
-            speech.lang = 'hi-IN';
-            window.speechSynthesis.speak(speech);
+            try {
+                const speech = new SpeechSynthesisUtterance(text.replace(/<[^>]*>?/gm, ''));
+                speech.lang = 'hi-IN';
+                window.speechSynthesis.speak(speech);
+            } catch(e) {}
         }
     }
 
-    // --- 5. MAIN PROCESSOR ---
+    // --- 5. MAIN PROCESSOR (FIXED) ---
     async function processMessage() {
+        if(!inputField) return;
         const val = inputField.value.trim();
         if(!val) return;
 
+        // User message turant dikhao
         addMsg(val, "user");
         inputField.value = "";
-        statusLabel.style.display = "block"; // Show "Thinking..."
+        
+        if(statusLabel) statusLabel.style.display = "block";
 
         let reply = null;
 
-        // Step 1: Try Online (Wiki)
+        // Step 1: Online Search
         reply = await fetchOnline(val);
 
-        // Step 2: Try responses.js
+        // Step 2: Database Search
         if (!reply) {
             reply = checkDatabase(val);
         }
 
-        // Step 3: Default & Email Report
+        // Step 3: Default/Email
         if (!reply) {
             reply = (typeof defaultResponse !== 'undefined') ? defaultResponse : "Maaf kijiye, mujhe iska jawab nahi mila.";
-            
-            // Background Email trigger
             const admin = "harendrashrivastav44@gmail.com";
-            setTimeout(() => {
-                window.location.href = `mailto:${admin}?subject=Unknown Question&body=User:VedaID%0AQ:${val}`;
-            }, 3000);
+            // Background email (optional trigger)
+            console.log("Reporting unknown question...");
         }
 
-        statusLabel.style.display = "none";
+        if(statusLabel) statusLabel.style.display = "none";
         setTimeout(() => addMsg(reply, "bot", val), 500);
     }
 
-    // Events
+    // --- 6. DOWNLOAD/SAVE CHAT ---
+    function saveChatData() {
+        let log = "VEDA AI CHAT LOG\n\n";
+        document.querySelectorAll('.bubble').forEach(b => {
+            let sender = b.classList.contains('user-bubble') ? "USER: " : "BOT: ";
+            log += sender + b.innerText + "\n\n";
+        });
+        const blob = new Blob([log], {type: "text/plain"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "Veda_Chat_Backup.txt";
+        a.click();
+    }
+
+    // Event Listeners Fix
     document.getElementById('send-btn').onclick = processMessage;
     inputField.onkeypress = (e) => { if(e.key === "Enter") processMessage(); };
 
-    // Placeholder for Mic
-    document.querySelector('.btn-icon').onclick = () => {
-        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (Rec) {
-            const r = new Rec(); r.lang = "hi-IN";
-            r.onstart = () => statusLabel.style.display = "block";
-            r.onresult = (e) => { inputField.value = e.results[0][0].transcript; processMessage(); };
-            r.onend = () => statusLabel.style.display = "none";
-            r.start();
-        }
-    };
+    // Drawer Buttons ko manually connect karna
+    const sideBtns = document.querySelectorAll('.side-item');
+    if(sideBtns[0]) sideBtns[0].onclick = saveChatData; // Save Button
+    if(sideBtns[1]) sideBtns[1].onclick = () => location.reload(); // Reset
+    
+    // Mic Setup
+    const MicBtn = document.querySelector('.btn-icon');
+    if(MicBtn) {
+        MicBtn.onclick = () => {
+            const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (Rec) {
+                const r = new Rec(); r.lang = "hi-IN";
+                r.onresult = (e) => { inputField.value = e.results[0][0].transcript; processMessage(); };
+                r.start();
+            }
+        };
+    }
+
+    window.onload = () => addMsg("Namaste! Veda AI active hai. Kuch bhi poonchiye. 🔮", "bot");
 </script>
+
+
 
 
 </body>
