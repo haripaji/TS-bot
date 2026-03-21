@@ -140,35 +140,58 @@
     };
 
     // --- MULTI-DATABASE LOGIC ---
-    async function getBotReply(msg) {
+     async function getBotReply(msg) {
         let q = msg.toLowerCase().trim();
 
-        // 1. Instant Data
+        // 1. HARDCODED BACKUP (Agar database load na ho toh bhi kaam karega)
+        const fastChat = {
+            "hi": "Namaste! Main Veda AI hoon. Kaise madad karun?",
+            "hello"," hlo": "Hello! Swagat hai aapka Veda AI mein.",
+            "hey": "Hey! Kya haal hain?",
+            "kaise ho": "Main bilkul badhiya! Aap kaise hain?",
+            "ok": "Theek hai!",
+            "hmm": "Hmm... main sun raha hoon.",
+            "bye": "Alvida! Apna khayal rakhein.",
+            "acha": "Achha, aisa hai kya?",
+            " Radhe radhe ":" Radhe Radhe! 💗",
+            "bc"," mc","sale": "Izzat se baat karo! ", " kya aap depression main hai" ,"Alya sometimes hide her feelings in Russian"
+        };
+        if (fastChat[q]) return fastChat[q];
+
+        // 2. Instant Data (Time/Date)
         if(q.includes("time")) return "Abhi " + new Date().toLocaleTimeString('hi-IN') + " ho rahe hain.";
         if(q.includes("date") || q.includes("tarikh")) return "Aaj " + new Date().toLocaleDateString('hi-IN') + " hai.";
 
-        // 2. Offline Database (Longest Match)
-        if (typeof vedaDatabase !== 'undefined') {
+        // 3. Offline Database (responses.js)
+        if (typeof vedaDatabase !== 'undefined' && vedaDatabase !== null) {
             let match = null; let maxL = 0;
             for (let k in vedaDatabase) {
-                if (q.includes(k.toLowerCase()) && k.length > maxL) {
-                    maxL = k.length; match = vedaDatabase[k];
+                let lowerK = k.toLowerCase();
+                if (q.includes(lowerK) && lowerK.length > maxL) {
+                    maxL = lowerK.length; 
+                    match = vedaDatabase[k];
                 }
             }
             if (match) return match;
         }
 
-        // 3. Wikipedia & DuckDuckGo Search
+        // 4. Online Search Logic (Wikipedia & DuckDuckGo)
         let topic = q.replace(/kya hai|batao|kaun hai|define|kise kehte hain/g, "").trim();
+        
+        // CHAT FILTER: Agar sawal 3 shabdon se chota hai, toh Google Link MAT dikhao
+        if (q.split(" ").length < 3 && topic.length < 5) {
+            return "Mujhe samajh nahi aaya. Kya aap thoda vistaar (detail) mein pooch sakte hain?";
+        }
+
         if(topic.length > 2) {
-            // Wikipedia
+            // Wikipedia (Hindi)
             try {
                 let r = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
                 let d = await r.json();
                 if (d.extract) return d.extract;
             } catch(e) {}
 
-            // DuckDuckGo
+            // DuckDuckGo (English/General)
             try {
                 let ddg = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_html=1`);
                 let ddgd = await ddg.json();
@@ -176,7 +199,7 @@
             } catch(e) {}
         }
         
-        // 4. Fallback: Google Search Link
+        // 5. Fallback: Google Search Link (Sirf bade sawalon ke liye)
         let gLink = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
         return `Mujhe sateek jawab nahi mila. Aap yahan click karke Google par dekh sakte hain: <br><br> <a href="${gLink}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">🔍 Search on Google</a>`;
     }
