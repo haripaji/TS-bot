@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Veda AI - Gemini Edition</title>
+    <style>
+        :root { --primary: #7c3aed; --bg: #0b1120; --card: #1e293b; --text: #f1f5f9; --secondary: #94a3b8; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', Roboto, sans-serif; height: 100vh; display: flex; overflow: hidden; }
+
+        /* --- 1. SIDEBAR / DRAWER --- */
+        #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: #0f172a; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; padding: 20px; box-shadow: 15px 0 50px rgba(0,0,0,0.5); }
+        #sidebar.active { left: 0; }
+        .drawer-header { display: flex; align-items: center; margin-bottom: 30px; }
+        .back-btn { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
+        .side-item { width: 100%; padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+
+        /* --- 2. MAIN CHAT AREA --- */
+        main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        header { padding: 15px 20px; display: flex; align-items: center; background: rgba(11, 17, 32, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .menu-icon { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
+        .logo { flex: 1; font-weight: 700; letter-spacing: 1px; color: var(--primary); }
+
+        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 120px; }
+        
+        /* Message Bubbles */
+        .msg-wrapper { max-width: 85%; display: flex; flex-direction: column; }
+        .user-wrapper { align-self: flex-end; }
+        .bot-wrapper { align-self: flex-start; }
+
+        .bubble { padding: 14px 18px; border-radius: 20px; font-size: 16px; line-height: 1.5; position: relative; }
+        .user-bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+        .bot-bubble { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-bottom-left-radius: 4px; }
+
+        /* Gemini Style Action Icons */
+        .actions { display: flex; gap: 15px; margin-top: 8px; padding-left: 5px; opacity: 0.6; }
+        .action-icon { font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .action-icon:hover { opacity: 1; color: var(--primary); }
+
+        /* --- 3. FLOATING INPUT & FOOTER --- */
+        .bottom-section { position: absolute; bottom: 0; width: 100%; padding: 10px 20px 5px 20px; background: linear-gradient(transparent, var(--bg) 40%); }
+        .input-wrapper { background: #2d3748; border-radius: 30px; display: flex; align-items: center; padding: 6px 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        input { flex: 1; background: transparent; border: none; color: white; padding: 12px 10px; font-size: 16px; outline: none; }
+        .btn-icon { background: none; border: none; color: var(--secondary); font-size: 20px; cursor: pointer; padding: 8px; }
+        #send-btn { color: var(--primary); }
+
+        .footer-branding { text-align: center; font-size: 11px; color: var(--secondary); margin-top: 8px; opacity: 0.7; letter-spacing: 0.5px; }
+
+        /* Typing Indicator */
+        .typing { font-size: 12px; color: var(--primary); margin-left: 20px; display: none; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<nav id="sidebar">
+    <div class="drawer-header">
+        <span class="back-btn" onclick="toggleMenu()">←</span>
+        <h2 style="margin:0; font-size: 20px;">Settings</h2>
+    </div>
+    <button class="side-item">💾 Save Chat</button>
+    <button class="side-item">🔄 Reset Conversation</button>
+    <button class="side-item">📧 Feedback</button>
+</nav>
+
+<main>
+    <header>
+        <div class="menu-icon" onclick="toggleMenu()">☰</div>
+        <div class="logo">VEDA AI</div>
+        <div style="font-size: 10px; opacity: 0.5;">v2.0</div>
+    </header>
+
+    <div id="chat-container">
+        <div class="msg-wrapper bot-wrapper">
+            <div class="bubble bot-bubble">Namaste! Main Veda AI hoon. Aaj hum kis baare mein baat karein?</div>
+            <div class="actions">
+                <span class="action-icon" title="Like">👍</span>
+                <span class="action-icon" title="Dislike">👎</span>
+                <span class="action-icon" title="Copy">📋</span>
+                <span class="action-icon" title="Redo">🔄</span>
+                <span class="action-icon" title="More">⋮</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="typing" id="status">Veda is searching internet...</div>
+
+    <div class="bottom-section">
+        <div class="input-wrapper">
+            <button class="btn-icon">🎤</button>
+            <input type="text" id="user-input" placeholder="Ask anything..." autocomplete="off">
+            <button class="btn-icon" id="send-btn">➤</button>
+        </div>
+        <div class="footer-branding">Created by thoughts sounds</div>
+    </div>
+</main>
+
+<script>
+    const sidebar = document.getElementById('sidebar');
+    const input = document.getElementById('user-input');
+
+    function toggleMenu() {
+        sidebar.classList.toggle('active');
+    }
+
+    // Input animation focus
+    input.addEventListener('focus', () => {
+        document.querySelector('.input-wrapper').style.borderColor = 'var(--primary)';
+    });
+    input.addEventListener('blur', () => {
+        document.querySelector('.input-wrapper').style.borderColor = 'rgba(255,255,255,0.1)';
+    });
+</script>
+
+</body>
+</html>
+
