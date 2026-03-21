@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI - Gemini Edition</title>
+    <title>Veda AI chatbot</title>
     <style>
         :root { 
             --primary: #7c3aed; 
@@ -105,13 +105,14 @@
 
 <script src="responses.js"></script>
 
-        <script>
+
+<script>
     const chatBox = document.getElementById('chat-container');
     const input = document.getElementById('user-input');
     const status = document.getElementById('status');
     const sidebar = document.getElementById('sidebar');
 
-    // 1. PERMANENT USER ID & MEMORY
+    // 1. PERMANENT USER ID
     let vedaUserID = localStorage.getItem('veda_uid');
     if (!vedaUserID) {
         vedaUserID = "V-" + Math.random().toString(36).substr(2, 5).toUpperCase();
@@ -121,7 +122,7 @@
     if(idTag) idTag.innerText = "ID: " + vedaUserID;
 
     let chatHistory = []; 
-    const FORMSPREE_URL = "https://formspree.io/f/xwvrzgvj"; // Aapka existing URL
+    const FORMSPREE_URL = "https://formspree.io/f/xwvrzgvj";
 
     // 2. TEXT TO SPEECH
     function speak(text) {
@@ -131,24 +132,24 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // 3. SILENT REPORT & FEEDBACK ENGINE
+    // 3. ADMIN LOGS (Report & Feedback)
     async function sendToAdmin(type, content) {
         try {
             await fetch(FORMSPREE_URL, {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    Type: type, // "REPORT FROM BOT" ya "FEEDBACK FROM USER"
+                    LogType: type,
                     UserID: vedaUserID,
-                    Message: content,
-                    Time: new Date().toLocaleString()
+                    Data: content,
+                    Timestamp: new Date().toLocaleString()
                 })
             });
-            if(type === "FEEDBACK FROM USER") alert("Shukriya! Aapka feedback bhej diya gaya hai.");
-        } catch (e) { console.log("Admin log failed."); }
+            if(type === "FEEDBACK FROM USER") alert("Feedback received! Thank you.");
+        } catch (e) { console.log("Formspree Error"); }
     }
 
-    // 4. SMART RESPONDER
+    // 4. SEARCH ENGINE
     async function getResponse(query) {
         let q = query.toLowerCase().trim();
 
@@ -158,7 +159,7 @@
             if (["kyun", "why", "kaise"].includes(q)) return "Kyunki internet aur mere database mein yahi jankari mojud hai.";
         }
 
-        // Live Info
+        // Live Time/Date
         if (q.includes("time") || q.includes("samay")) return "Abhi " + new Date().toLocaleTimeString('hi-IN') + " ho rahe hain.";
         if (q.includes("date") || q.includes("tarikh")) return "Aaj " + new Date().toLocaleDateString('hi-IN') + " hai.";
 
@@ -182,7 +183,26 @@
         } catch (e) { return null; }
     }
 
-    // 5. PROCESS MESSAGE
+    // 5. UI DISPLAY (Simple & Direct)
+    function addMsg(text, type, rawInput = "") {
+        const div = document.createElement("div");
+        div.className = `msg-wrapper ${type}-wrapper`;
+        
+        // Direct Text Insertion (No animations)
+        let actions = type === 'bot' ? `
+            <div class="actions" style="opacity:1 !important;">
+                <span class="action-icon" onclick="speak(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span>
+                <span class="action-icon" onclick="navigator.clipboard.writeText(\`${text}\`)">📋</span>
+                <span class="action-icon" onclick="input.value='${rawInput}';processMessage()">🔄</span>
+            </div>` : '';
+
+        div.innerHTML = `<div class="bubble ${type}-bubble" style="display:block !important; visibility:visible !important;">${text}</div>${actions}`;
+        
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // 6. PROCESSOR
     async function processMessage() {
         const val = input.value.trim();
         if(!val) return;
@@ -195,63 +215,31 @@
 
         if (!reply) {
             reply = "Main is baare mein thoda aur seekh raha hoon. Kya hum kisi aur topic par baat karein?";
-            sendToAdmin("REPORT FROM BOT", val); // Automatic Report
+            sendToAdmin("REPORT FROM BOT", val);
         }
 
         chatHistory.push({ user: val, bot: reply });
         if(chatHistory.length > 5) chatHistory.shift();
 
         status.style.display = "none";
-        setTimeout(() => addMsg(reply, "bot", val), 400);
+        setTimeout(() => addMsg(reply, "bot", val), 200);
     }
 
-    // 6. UI BUILDER (With Text Fix)
-    function addMsg(text, type, rawInput = "") {
-        const div = document.createElement("div");
-        div.className = `msg-wrapper ${type}-wrapper`;
-        const bubble = document.createElement("div");
-        bubble.className = `bubble ${type}-bubble`;
-        
-        // Fix: Bubble mein text turant daalna taaki gayab na ho
-        bubble.innerText = text; 
-        div.appendChild(bubble);
-        chatBox.appendChild(div);
-
-        if(type === 'bot') {
-            // Sirf visual effect ke liye halka sa fade-in
-            bubble.style.opacity = "0";
-            setTimeout(() => { bubble.style.opacity = "1"; bubble.style.transition = "0.3s"; }, 10);
-
-            let actions = `
-            <div class="actions">
-                <span class="action-icon" onclick="speak(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span>
-                <span class="action-icon" onclick="navigator.clipboard.writeText(\`${text}\`)">📋</span>
-                <span class="action-icon" onclick="input.value='${rawInput}';processMessage()">🔄</span>
-            </div>`;
-            div.innerHTML += actions;
-        }
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // 7. FEEDBACK BUTTON LOGIC
+    // 7. FEEDBACK & MIC
     document.getElementById('feedback-btn').onclick = () => {
-        let feedback = prompt("Veda AI ke baare mein apna feedback likhein:");
-        if (feedback) {
-            sendToAdmin("FEEDBACK FROM USER", feedback);
-        }
+        let fb = prompt("Enter your feedback for Veda AI:");
+        if (fb) sendToAdmin("FEEDBACK FROM USER", fb);
     };
 
-    // 8. MIC & EVENTS
     const micBtn = document.getElementById('mic-btn');
     micBtn.onclick = () => {
-        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Recognition) return alert("Browser support nahi hai.");
-        const rec = new Recognition();
-        rec.lang = 'hi-IN';
+        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!Rec) return alert("Mic not supported");
+        const r = new Rec(); r.lang = 'hi-IN';
         micBtn.style.color = "red";
-        rec.onresult = (e) => { input.value = e.results[0][0].transcript; micBtn.style.color = ""; processMessage(); };
-        rec.onerror = () => { micBtn.style.color = ""; };
-        rec.start();
+        r.onresult = (e) => { input.value = e.results[0][0].transcript; micBtn.style.color = ""; processMessage(); };
+        r.onerror = () => { micBtn.style.color = ""; };
+        r.start();
     };
 
     document.getElementById('send-btn').onclick = processMessage;
