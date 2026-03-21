@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI chatbot</title>
+    <title>Veda AI Chatbot</title>
     <style>
         :root { 
             --primary: #7c3aed; 
@@ -94,7 +94,6 @@
     <button class="side-item" onclick="saveChat()">💾 Save Chat Log</button>
     <button class="side-item" onclick="clearChat()">🗑️ Clear Conversation</button>
     <button class="side-item" onclick="sendFeedback()">📧 Send Feedback</button>
-
 </nav>
 
 <main>
@@ -140,22 +139,28 @@
     };
 
     // --- MULTI-DATABASE LOGIC ---
-     async function getBotReply(msg) {
+    async function getBotReply(msg) {
         let q = msg.toLowerCase().trim();
 
-        // 1. HARDCODED BACKUP (Agar database load na ho toh bhi kaam karega)
+        // 1. HARDCODED BACKUP (Essential Phrases)
         const fastChat = {
             "hi": "Namaste! Main Veda AI hoon. Kaise madad karun?",
-            "hello"," hlo": "Hello! Swagat hai aapka Veda AI mein.",
+            "hello": "Hello! Swagat hai aapka Veda AI mein.",
+            "hlo": "Hello! Swagat hai aapka Veda AI mein.",
             "hey": "Hey! Kya haal hain?",
             "kaise ho": "Main bilkul badhiya! Aap kaise hain?",
             "ok": "Theek hai!",
             "hmm": "Hmm... main sun raha hoon.",
             "bye": "Alvida! Apna khayal rakhein.",
             "acha": "Achha, aisa hai kya?",
-            " Radhe radhe ":" Radhe Radhe! 💗",
-            "bc"," mc","sale": "Izzat se baat karo! ", " kya aap depression main hai" ,"Alya sometimes hide her feelings in Russian"
+            "radhe radhe": "Radhe Radhe! 💗",
+            "bc": "Izzat se baat karein! Badtameezi bardasht nahi ki jayegi.",
+            "mc": "Kripya sabhya bhasha ka upyog karein.",
+            "sale": "Bhasha par dhyan dein, main ek AI assistant hoon.",
+            "depression": "Agar aap pareshan hain, toh kripya kisi doctor ya apne kisi pyare se baat karein. Aap akele nahi hain.",
+            "alya": "Alya sometimes hides her feelings in Russian! 😊 Kya aap anime ki baat kar rahe hain?"
         };
+        
         if (fastChat[q]) return fastChat[q];
 
         // 2. Instant Data (Time/Date)
@@ -166,7 +171,7 @@
         if (typeof vedaDatabase !== 'undefined' && vedaDatabase !== null) {
             let match = null; let maxL = 0;
             for (let k in vedaDatabase) {
-                let lowerK = k.toLowerCase();
+                let lowerK = k.toLowerCase().trim();
                 if (q.includes(lowerK) && lowerK.length > maxL) {
                     maxL = lowerK.length; 
                     match = vedaDatabase[k];
@@ -175,23 +180,21 @@
             if (match) return match;
         }
 
-        // 4. Online Search Logic (Wikipedia & DuckDuckGo)
+        // 4. Online Search Logic
         let topic = q.replace(/kya hai|batao|kaun hai|define|kise kehte hain/g, "").trim();
         
-        // CHAT FILTER: Agar sawal 3 shabdon se chota hai, toh Google Link MAT dikhao
+        // CHAT FILTER: Chote sawalon par Google Link nahi
         if (q.split(" ").length < 3 && topic.length < 5) {
             return "Mujhe samajh nahi aaya. Kya aap thoda vistaar (detail) mein pooch sakte hain?";
         }
 
         if(topic.length > 2) {
-            // Wikipedia (Hindi)
             try {
                 let r = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
                 let d = await r.json();
                 if (d.extract) return d.extract;
             } catch(e) {}
 
-            // DuckDuckGo (English/General)
             try {
                 let ddg = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_html=1`);
                 let ddgd = await ddg.json();
@@ -199,7 +202,6 @@
             } catch(e) {}
         }
         
-        // 5. Fallback: Google Search Link (Sirf bade sawalon ke liye)
         let gLink = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
         return `Mujhe sateek jawab nahi mila. Aap yahan click karke Google par dekh sakte hain: <br><br> <a href="${gLink}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">🔍 Search on Google</a>`;
     }
@@ -242,31 +244,22 @@
 
     function clearChat() { if(confirm("Clear chat history?")) { chatBox.innerHTML = ""; addMessage("Chat reset. Namaste!", "bot"); } }
 
-    // --- FEEDBACK SYSTEM ---
-async function sendFeedback() {
-    let fb = prompt("Veda AI ke liye apna feedback ya sujhav (suggestion) likhein:");
-    if (fb && fb.trim() !== "") {
-        try {
-            const FORMSPREE_URL = "https://formspree.io/f/xwvrzgvj"; // Aapka Formspree ID
-            await fetch(FORMSPREE_URL, {
-                method: 'POST',
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    Type: "USER_FEEDBACK", 
-                    User_ID: uid, 
-                    Message: fb, 
-                    Date: new Date().toLocaleString() 
-                })
-            });
-            alert("Shukriya! Aapka feedback admin (Thoughts Sounds) ko bhej diya gaya hai.");
-            toggleMenu(); // Sidebar band karne ke liye
-        } catch (e) {
-            alert("Feedback bhejne mein dikat hui. Baad mein koshish karein.");
+    async function sendFeedback() {
+        let fb = prompt("Veda AI ke liye apna feedback likhein:");
+        if (fb && fb.trim() !== "") {
+            try {
+                const FORMSPREE_URL = "https://formspree.io/f/xwvrzgvj";
+                await fetch(FORMSPREE_URL, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Type: "FEEDBACK", User: uid, Message: fb })
+                });
+                alert("Shukriya! Feedback bhej diya gaya hai.");
+                toggleMenu();
+            } catch (e) { alert("Error sending feedback."); }
         }
     }
-}
 
-    
     document.getElementById('send-btn').onclick = handleSend;
     userInput.onkeydown = (e) => { if(e.key === "Enter") handleSend(); };
     
