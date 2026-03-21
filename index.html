@@ -193,7 +193,129 @@
             inputField.value = "";
         }
     });
+<script>
+    const chatContainer = document.getElementById('chat-container');
+    const inputField = document.getElementById('user-input');
+    const statusLabel = document.getElementById('status');
+    const sidebar = document.getElementById('sidebar');
+
+    function toggleMenu() { sidebar.classList.toggle('active'); }
+
+    // --- 1. WIKIPEDIA API (With 5s Timeout) ---
+    async function fetchOnline(query) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        try {
+            const url = `https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+            const response = await fetch(url, { signal: controller.signal });
+            const data = await response.json();
+            clearTimeout(timeoutId);
+            return data.extract || null;
+        } catch (e) { return null; }
+    }
+
+    // --- 2. RESPONSES.JS HANDLER (Dynamic) ---
+    function checkDatabase(text) {
+        text = text.toLowerCase().trim();
+        if (typeof vedaDatabase !== 'undefined') {
+            for (let key in vedaDatabase) {
+                if (text.includes(key.toLowerCase())) return vedaDatabase[key];
+            }
+        }
+        return null;
+    }
+
+    // --- 3. UI UTILITIES (Copy, Redo, Like) ---
+    function copyText(btn, text) {
+        navigator.clipboard.writeText(text);
+        btn.innerText = "✅";
+        setTimeout(() => btn.innerText = "📋", 2000);
+    }
+
+    function redoTask(text) {
+        inputField.value = text;
+        processMessage();
+    }
+
+    // --- 4. MESSAGE GENERATOR ---
+    function addMsg(text, type, rawInput = "") {
+        const wrapper = document.createElement("div");
+        wrapper.className = `msg-wrapper ${type}-wrapper`;
+        
+        const actionsHTML = type === 'bot' ? `
+            <div class="actions">
+                <span class="action-icon" onclick="this.style.color='#22c55e'">👍</span>
+                <span class="action-icon" onclick="this.style.color='#ef4444'">👎</span>
+                <span class="action-icon" onclick="copyText(this, \`${text.replace(/'/g, "\\'")}\`)">📋</span>
+                <span class="action-icon" onclick="redoTask(\`${rawInput}\`)">🔄</span>
+            </div>` : '';
+
+        wrapper.innerHTML = `
+            <div class="bubble ${type}-bubble">${text}</div>
+            ${actionsHTML}
+        `;
+        
+        chatContainer.appendChild(wrapper);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        if (type === "bot") {
+            const speech = new SpeechSynthesisUtterance(text.replace(/<[^>]*>?/gm, ''));
+            speech.lang = 'hi-IN';
+            window.speechSynthesis.speak(speech);
+        }
+    }
+
+    // --- 5. MAIN PROCESSOR ---
+    async function processMessage() {
+        const val = inputField.value.trim();
+        if(!val) return;
+
+        addMsg(val, "user");
+        inputField.value = "";
+        statusLabel.style.display = "block"; // Show "Thinking..."
+
+        let reply = null;
+
+        // Step 1: Try Online (Wiki)
+        reply = await fetchOnline(val);
+
+        // Step 2: Try responses.js
+        if (!reply) {
+            reply = checkDatabase(val);
+        }
+
+        // Step 3: Default & Email Report
+        if (!reply) {
+            reply = (typeof defaultResponse !== 'undefined') ? defaultResponse : "Maaf kijiye, mujhe iska jawab nahi mila.";
+            
+            // Background Email trigger
+            const admin = "harendrashrivastav44@gmail.com";
+            setTimeout(() => {
+                window.location.href = `mailto:${admin}?subject=Unknown Question&body=User:VedaID%0AQ:${val}`;
+            }, 3000);
+        }
+
+        statusLabel.style.display = "none";
+        setTimeout(() => addMsg(reply, "bot", val), 500);
+    }
+
+    // Events
+    document.getElementById('send-btn').onclick = processMessage;
+    inputField.onkeypress = (e) => { if(e.key === "Enter") processMessage(); };
+
+    // Placeholder for Mic
+    document.querySelector('.btn-icon').onclick = () => {
+        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (Rec) {
+            const r = new Rec(); r.lang = "hi-IN";
+            r.onstart = () => statusLabel.style.display = "block";
+            r.onresult = (e) => { inputField.value = e.results[0][0].transcript; processMessage(); };
+            r.onend = () => statusLabel.style.display = "none";
+            r.start();
+        }
+    };
 </script>
+
 
 </body>
 </html>
