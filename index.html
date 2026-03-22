@@ -124,6 +124,24 @@
             } catch (e) { }
         }
 
+        // --- STEP: EMOTION & MOOD DETECTION ---
+        const moods = {
+            "gussa": ["shant", "gussa", "pagal", "angry", "chup"],
+            "dukh": ["sad", "akela", "ro raha", "pareshan", "tension"],
+            "khushi": ["happy", "mazza", "maza", "khush", "party"]
+        };
+
+        if (moods.gussa.some(word => q.includes(word))) {
+            return "Lagta hai aap gusse mein hain. Shanti se baithiye, thoda pani pijiye. Main aapki kya madad karun?";
+        }
+        if (moods.dukh.some(word => q.includes(word))) {
+            return "Pareshan mat hoiye, waqt hamesha badalta hai. Kya main aapka mood thik karne ke liye koi joke sunaoon?";
+        }
+        if (moods.khushi.some(word => q.includes(word))) {
+            return "Aapki khushi dekh kar mujhe bhi accha laga! Bataiye, is khushi ke mauke par kya baat karein?";
+        }
+
+        
         // 2. FAST CHAT SECTION (Greetings & Slangs)
         const fastChat = {
             "hi": "Namaste! Main Veda AI hoon. Kaise madad karun?",
