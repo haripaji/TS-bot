@@ -83,10 +83,10 @@
         <button onclick="event.stopPropagation(); toggleCategory()" style="background:none; border:none; color:#8e8ea0; font-size:24px; margin-right:12px; cursor:pointer;">➕</button>
         <input type="text" id="user-in" placeholder="Ask Veda anything..." autocomplete="off">
         <button onclick="handleSend()" style="background:none; border:none; color:var(--primary); font-size:24px; cursor:pointer;">⬆️</button>
-    </div> 
-    <div>"Created by Thoughts Sounds"</div>
+    </div>     
 </div>
-
+<div class="footer" style="color:#ffeeef;">"Created by Thoughts Sounds"</div>
+    
 <script>
     let vedaMemory = JSON.parse(localStorage.getItem('vedaMemory')) || {};
     let learningMode = { active: false, question: "" };
