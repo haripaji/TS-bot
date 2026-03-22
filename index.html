@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI - The Learning Bot</title>
+    <title>Veda AI - Fixed Edition</title>
     <style>
         :root { --primary: #10a37f; --bg: #343541; --sidebar: #202123; --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #444654; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
@@ -23,17 +23,18 @@
         
         .action-bar { display: flex; gap: 18px; font-size: 15px; color: #8e8ea0; margin-top: 5px; }
         .action-bar span { cursor: pointer; transition: 0.2s; }
-        .action-bar span:hover { color: var(--primary); }
 
-        /* Slider Menu */
-        #settings-menu { position: fixed; top: 0; left: -100%; width: 85%; max-width: 320px; height: 100%; background: var(--sidebar); z-index: 1001; padding: 25px; transition: 0.4s ease; box-shadow: 10px 0 30px rgba(0,0,0,0.5); overflow-y: auto; }
+        /* Category Popup */
+        #category-menu { display: none; position: fixed; bottom: 80px; left: 20px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 12px; padding: 10px; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 180px; }
+        .cat-btn { width: 100%; background: none; border: none; color: white; padding: 10px; text-align: left; cursor: pointer; border-radius: 8px; font-size: 14px; }
+        .cat-btn:hover { background: var(--card); color: var(--primary); }
+
+        /* Slider */
+        #settings-menu { position: fixed; top: 0; left: -100%; width: 85%; max-width: 320px; height: 100%; background: var(--sidebar); z-index: 1001; padding: 25px; transition: 0.4s ease; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
         #settings-menu.open { left: 0; }
         #menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(3px); }
 
-        .menu-btn { width: 100%; background: #2d2d39; border: none; color: white; padding: 14px; text-align: left; margin-bottom: 12px; border-radius: 10px; cursor: pointer; font-size: 14px; }
-        .profile-card { background: #2d2d39; padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
-        .calendar-card { background: #1a1b1e; padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; text-align: center; }
-        .time-text { font-size: 1.6rem; font-weight: bold; color: var(--primary); }
+        .menu-btn { width: 100%; background: #2d2d39; border: none; color: white; padding: 14px; text-align: left; margin-bottom: 12px; border-radius: 10px; cursor: pointer; }
 
         .footer { width: 100%; padding: 10px 15px 30px; background: var(--bg); flex-shrink: 0; }
         .input-container { max-width: 800px; margin: 0 auto; background: #40414f; border-radius: 15px; display: flex; align-items: center; padding: 10px 15px; border: 1px solid var(--border); }
@@ -42,178 +43,143 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
+<body onclick="hidePopups()">
 
 <div id="menu-overlay" onclick="toggleMenu(false)"></div>
 
 <header>
-    <button onclick="toggleMenu(true)" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">☰</button>
+    <button onclick="event.stopPropagation(); toggleMenu(true)" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">☰</button>
     <div class="title">Veda AI</div>
     <div id="header-user" class="user-info">User<br>VEDA-0000</div>
 </header>
 
 <div id="chat-box"></div>
 
+<div id="category-menu">
+    <button class="cat-btn" onclick="setCat('Study')">📚 Study Mode</button>
+    <button class="cat-btn" onclick="setCat('Math')">🧮 Math Solver</button>
+    <button class="cat-btn" onclick="setCat('Anime')">⛩️ Anime Fan</button>
+    <button class="cat-btn" onclick="setCat('Auto')">🤖 Auto Mode</button>
+</div>
+
 <div class="footer">
     <div class="input-container">
-        <button style="background:none; border:none; color:#8e8ea0; font-size:24px; margin-right:10px; cursor:pointer;">➕</button>
-        <input type="text" id="user-in" placeholder="Veda ko kuch sikhaein ya poochein..." autocomplete="off">
+        <button onclick="event.stopPropagation(); toggleCategory(true)" style="background:none; border:none; color:#8e8ea0; font-size:24px; margin-right:10px; cursor:pointer;">➕</button>
+        <input type="text" id="user-in" placeholder="Veda se baatchit karein..." autocomplete="off">
         <button onclick="handleSend()" style="background:none; border:none; color:var(--primary); font-size:24px; cursor:pointer;">⬆️</button>
     </div>
 </div>
 
 <div id="settings-menu">
     <h3 style="color:var(--primary); margin-bottom:20px;">Veda Settings</h3>
-    
-    <div class="profile-card">
-        <div id="menu-user-name" style="font-weight: bold; font-size: 1.1rem;">User Name</div>
-        <div id="menu-user-id" style="font-size: 11px; color: #8e8ea0; margin-bottom: 12px;">ID: VEDA-0000</div>
-        <button class="menu-btn" style="background:var(--primary); margin:0; text-align:center;" onclick="triggerSignup()">👤 Edit Profile</button>
+    <div style="background: #2d2d39; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+        <div id="menu-user-name" style="font-weight: bold;">User Name</div>
+        <div id="menu-user-id" style="font-size: 11px; color: #8e8ea0;">ID: VEDA-0000</div>
     </div>
-
-    <div class="calendar-card">
-        <div id="live-time" class="time-text">00:00:00</div>
-        <div id="live-date" style="font-size: 0.9rem; color: #8e8ea0; margin: 5px 0;">Date</div>
-        <div id="live-day" style="font-size: 0.8rem; color: var(--primary); font-weight: bold;">Day</div>
+    <div id="live-cal" style="background:#1a1b1e; padding:15px; border-radius:12px; text-align:center; margin-bottom:20px;">
+        <div id="live-time" style="font-size:1.5rem; color:var(--primary); font-weight:bold;">00:00:00</div>
+        <div id="live-date" style="font-size:0.8rem; color:#8e8ea0;">Date</div>
     </div>
-
-    <button class="menu-btn" onclick="alert('Veda AI V1.9\nStatus: Learning Enabled')">ℹ️ About Veda</button>
-    <button class="menu-btn" style="color:#ff4d4d;" onclick="clearMemory()">🧠 Reset Brain</button>
-    <button class="menu-btn" onclick="location.reload()">🔄 Refresh</button>
+    <button class="menu-btn" onclick="clearMemory()">🧠 Reset Memory</button>
+    <button class="menu-btn" onclick="location.reload()">🔄 Restart</button>
 </div>
 
 <script>
     let vedaMemory = JSON.parse(localStorage.getItem('vedaMemory')) || {};
     let learningMode = { active: false, question: "" };
     let userName = localStorage.getItem('vedaName') || "User";
-    const vedaUserID = localStorage.getItem('vedaUserID') || "VEDA-" + Math.floor(1000 + Math.random() * 9000);
-    localStorage.setItem('vedaUserID', vedaUserID);
+    const vedaID = localStorage.getItem('vedaUserID') || "VEDA-" + Math.floor(1000 + Math.random() * 9000);
+    localStorage.setItem('vedaUserID', vedaID);
 
-    window.onload = () => {
-        updateUI();
-        startClock();
-        addMessage(`Namaste ${userName}! Main Veda hoon. Aap mujhse sawal pooch sakte hain ya mujhe naye jawab sikha sakte hain.`, "bot");
-    };
+    window.onload = () => { updateUI(); startClock(); addMessage(`Namaste ${userName}! Main Veda AI hoon.`, "bot"); };
 
     function startClock() {
         setInterval(() => {
-            const now = new Date();
-            document.getElementById('live-time').innerText = now.toLocaleTimeString('en-GB');
-            document.getElementById('live-date').innerText = now.toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            document.getElementById('live-day').innerText = days[now.getDay()];
+            const n = new Date();
+            document.getElementById('live-time').innerText = n.toLocaleTimeString();
+            document.getElementById('live-date').innerText = n.toLocaleDateString('hi-IN', {day:'numeric', month:'long', year:'numeric'});
         }, 1000);
     }
 
     function updateUI() {
-        document.getElementById('header-user').innerHTML = `${userName}<br>${vedaUserID}`;
+        document.getElementById('header-user').innerHTML = `${userName}<br>${vedaID}`;
         document.getElementById('menu-user-name').innerText = userName;
-        document.getElementById('menu-user-id').innerText = "ID: " + vedaUserID;
+        document.getElementById('menu-user-id').innerText = "ID: " + vedaID;
     }
 
-    function toggleMenu(s) {
+    function toggleMenu(s) { 
         document.getElementById('settings-menu').classList.toggle('open', s);
         document.getElementById('menu-overlay').style.display = s ? 'block' : 'none';
     }
 
+    function toggleCategory(s) { document.getElementById('category-menu').style.display = s ? 'block' : 'none'; }
+    function hidePopups() { toggleCategory(false); }
+
+    function setCat(c) { addMessage(`Category switched to: ${c}`, "bot"); toggleCategory(false); }
+
     async function handleSend() {
-        const input = document.getElementById('user-in');
-        const val = input.value.trim();
+        const inp = document.getElementById('user-in');
+        const val = inp.value.trim();
         if(!val) return;
-
         addMessage(val, 'user');
-        input.value = "";
-
-        const box = document.getElementById('chat-box');
-        const typing = document.createElement('div');
-        typing.className = 'msg-container bot';
-        typing.innerHTML = `<div class="bubble" style="color:#8e8ea0;">Veda is thinking...</div>`;
-        box.appendChild(typing);
-        box.scrollTop = box.scrollHeight;
-
-        setTimeout(() => {
-            typing.remove();
-            const reply = processLogic(val);
-            addMessage(reply, 'bot');
-        }, 600);
+        inp.value = "";
+        setTimeout(() => { addMessage(processLogic(val), 'bot'); }, 600);
     }
 
     function processLogic(q) {
         const query = q.toLowerCase();
-        const now = new Date();
-
-        // 1. Learning Response
+        
+        // 1. Learning Logic
         if (learningMode.active) {
             vedaMemory[learningMode.question] = q;
             localStorage.setItem('vedaMemory', JSON.stringify(vedaMemory));
             learningMode.active = false;
-            return `Shukriya! Maine yaad kar liya hai ki "${learningMode.question}" ka matlab "${q}" hota hai.`;
+            return `Shukriya! Maine yaad kar liya.`;
         }
 
-        // 2. Memory Check
-        if (vedaMemory[query]) return vedaMemory[query] + " <br><small style='color:var(--primary); font-size:9px;'>(Learned)</small>";
+        // 2. Normal Greetings (No Answer Request)
+        const greetings = ["hi", "hello", "hey", "kaise ho", "namaste"];
+        if (greetings.includes(query)) return "Main bilkul thik hoon! Aap kaise hain?";
 
-        // 3. Time/Date/Day (Sirf poochne par)
-        if (query.includes("time") || query.includes("samay")) return `Abhi **${now.toLocaleTimeString()}** ho rahe hain.`;
-        if (query.includes("date") || query.includes("tarikh")) return `Aaj ki tarikh **${now.toLocaleDateString()}** hai.`;
-        if (query.includes("day") || query.includes("din")) {
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            return `Aaj **${days[now.getDay()]}** hai.`;
-        }
+        // 3. Time/Date/Math
+        if (query.includes("time")) return `Abhi samay hai: ${new Date().toLocaleTimeString()}`;
+        if (query.includes("date")) return `Aaj tarikh hai: ${new Date().toLocaleDateString()}`;
+        if (/[\d]+[+\-*/][\d]+/.test(query)) return `Result: ${eval(query.replace(/[^-()\d/*+. ]/g, ''))}`;
 
-        // 4. Math Solver
-        if (/[\d]+[+\-*/][\d]+/.test(query)) {
-            try { return `🧮 Hisab: **${eval(query.replace(/[^-()\d/*+. ]/g, ''))}**`; } catch(e) {}
-        }
+        // 4. Memory Search
+        if (vedaMemory[query]) return vedaMemory[query] + " <small>(Learned)</small>";
 
-        // 5. If Unknown -> Trigger Learning
+        // 5. Trigger Learning
         learningMode.active = true;
         learningMode.question = query;
-        return `Mujhe iska jawab nahi pata. **Kya aap mujhe sikha sakte hain?** (Bas iska jawab likh kar bhejiye)`;
+        return `Mujhe iska jawab nahi pata. **Kya aap mujhe sikha sakte hain?**`;
     }
 
     function addMessage(txt, sender) {
         const box = document.getElementById('chat-box');
-        const container = document.createElement('div');
-        container.className = `msg-container ${sender}`;
-        const safeTxt = txt.replace(/'/g, "\\'");
+        const div = document.createElement('div');
+        div.className = `msg-container ${sender}`;
         const actions = (sender === 'bot') ? `
             <div class="action-bar">
-                <span onclick="speak('${safeTxt}')">🔊</span>
-                <span onclick="likeResponse(this)">👍</span>
-                <span onclick="navigator.clipboard.writeText('${safeTxt}'); alert('Copied!')">📋</span>
+                <span onclick="speak(\`${txt.replace(/`/g, "'")}\`)">🔊</span>
+                <span onclick="this.style.color='var(--primary)'">👍</span>
+                <span onclick="alert('Copied!')">📋</span>
             </div>` : "";
-        container.innerHTML = `<div class="bubble">${txt}</div>${actions}`;
-        box.appendChild(container);
+        div.innerHTML = `<div class="bubble">${txt}</div>${actions}`;
+        box.appendChild(div);
         box.scrollTop = box.scrollHeight;
-    }
-
-    function likeResponse(el) {
-        el.style.color = "var(--primary)";
-        addMessage("Khushi hui ki aapko mera jawab pasand aaya! 😊", "bot");
     }
 
     function speak(t) {
         window.speechSynthesis.cancel();
-        let u = new SpeechSynthesisUtterance(t);
+        // Clean text: removes HTML tags like <small> before speaking
+        let cleanText = t.replace(/<\/?[^>]+(>|$)/g, "");
+        let u = new SpeechSynthesisUtterance(cleanText);
         u.lang = 'hi-IN';
         window.speechSynthesis.speak(u);
     }
 
-    function triggerSignup() {
-        let n = prompt("Naya naam:");
-        if(n) { userName = n; localStorage.setItem('vedaName', n); updateUI(); }
-    }
-
-    function clearMemory() {
-        if(confirm("Kya aap meri seekhi hui baatein mita dena chahte hain?")) {
-            localStorage.removeItem('vedaMemory');
-            vedaMemory = {};
-            location.reload();
-        }
-    }
-
-    document.getElementById('user-in').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSend(); });
+    function clearMemory() { if(confirm("Reset memory?")) { localStorage.removeItem('vedaMemory'); location.reload(); } }
 </script>
 </body>
 </html>
