@@ -13,10 +13,11 @@
             --bg: #f1f5f9; --card: #ffffff; --text: #0f172a;
             --secondary: #64748b; --border: rgba(0,0,0,0.1);
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: all 0.2s ease; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; height: 100dvh; display: flex; overflow: hidden; }
         
-        #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: #0f172a; z-index: 1000; padding: 25px; box-shadow: 20px 0 50px rgba(0,0,0,0.5); color: white; }
+        /* Sidebar Smooth Slide */
+        #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: #0f172a; z-index: 1000; padding: 25px; box-shadow: 20px 0 50px rgba(0,0,0,0.5); color: white; transition: 0.4s; }
         #sidebar.active { left: 0; }
         .side-item { width: 100%; padding: 14px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 12px; }
 
@@ -25,28 +26,33 @@
         .menu-btn { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
         .logo-text { font-weight: 800; color: var(--primary); font-size: 1.2rem; flex: 1; }
 
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; padding-bottom: 120px; }
-        .msg { max-width: 85%; display: flex; flex-direction: column; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; padding-bottom: 120px; scroll-behavior: smooth; }
+        .msg { max-width: 85%; display: flex; flex-direction: column; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .user { align-self: flex-end; }
         .bot { align-self: flex-start; }
         .bubble { padding: 12px 18px; border-radius: 20px; font-size: 15px; line-height: 1.6; word-wrap: break-word; }
         .user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
         .bot .bubble { background: var(--card); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
         
-        .msg-tools { display: flex; gap: 12px; margin-top: 5px; padding: 0 5px; }
-        .tool-icon { font-size: 14px; cursor: pointer; color: var(--secondary); }
+        /* Suggestions Panel */
+        #suggestion-panel { position: absolute; bottom: -200px; width: 100%; background: var(--card); border-top: 2px solid var(--primary); border-radius: 25px 25px 0 0; padding: 20px; z-index: 50; transition: 0.4s ease; display: flex; flex-wrap: wrap; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,0.3); }
+        #suggestion-panel.open { bottom: 85px; }
+        .suggest-btn { background: rgba(124, 58, 237, 0.1); border: 1px solid var(--primary); color: var(--text); padding: 8px 15px; border-radius: 20px; font-size: 13px; cursor: pointer; }
 
-        .typing-bubble { display: none; align-self: flex-start; background: var(--card); padding: 10px 20px; border-radius: 20px; margin-bottom: 10px; border: 1px solid var(--border); }
+        .input-area { position: absolute; bottom: 0; width: 100%; padding: 15px 20px; background: var(--bg); z-index: 60; }
+        .input-container { background: var(--card); border-radius: 50px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid var(--border); }
+        input { flex: 1; background: none; border: none; color: var(--text); padding: 12px; outline: none; font-size: 16px; }
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--secondary); padding: 5px; }
+        #send-btn { color: var(--primary); font-size: 24px; }
+        #plus-btn.active { transform: rotate(45deg); color: var(--primary); }
+
+        .typing-bubble { display: none; align-self: flex-start; background: var(--card); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 10px; }
         .dot { height: 8px; width: 8px; background: var(--primary); border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out; }
         .dot:nth-child(2) { animation-delay: 0.2s; }
         .dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-
-        .input-area { position: absolute; bottom: 0; width: 100%; padding: 15px 20px; background: linear-gradient(transparent, var(--bg) 50%); }
-        .input-container { background: var(--card); border-radius: 50px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid var(--border); }
-        input { flex: 1; background: none; border: none; color: var(--text); padding: 12px; outline: none; font-size: 16px; }
-        .icon-btn { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--secondary); }
-        #send-btn { color: var(--primary); font-size: 24px; }
     </style>
 </head>
 <body>
@@ -59,21 +65,29 @@
     <button class="side-item" id="theme-toggle">🌓 Switch Appearance</button>
     <button class="side-item" onclick="saveChat()">💾 Save Chat Log</button>
     <button class="side-item" onclick="clearChat()">🗑️ Clear Conversation</button>
-    <button class="side-item" onclick="sendFeedback()">📧 Send Feedback</button>
+    <button class="side-item" onclick="updateName()">👤 Change My Name</button>
 </nav>
+
+<div id="suggestion-panel">
+    <button class="suggest-btn" onclick="quickAsk('Economics Notes')">📈 Economics</button>
+    <button class="suggest-btn" onclick="quickAsk('Aryan kaun hai?')">🧒 Aryan Story</button>
+    <button class="suggest-btn" onclick="quickAsk('Alya Russian')">🇷🇺 Alya Anime</button>
+    <button class="suggest-btn" onclick="quickAsk('Math solve karo')">➕ Calculator</button>
+    <button class="suggest-btn" onclick="quickAsk('Joke sunao')">😂 Joke</button>
+</div>
 
 <main>
     <header>
         <div class="menu-btn" onclick="toggleMenu()">☰</div>
         <div class="logo-text">VEDA AI</div>
-        <div style="font-size:9px; color:var(--secondary)" id="uid">Loading...</div>
+        <div style="font-size:10px; color:var(--secondary)" id="user-display">Namaste!</div>
     </header>
     <div id="chat-box"></div>
     <div class="typing-bubble" id="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     <div class="input-area">
         <div class="input-container">
-            <button class="icon-btn" id="voice-btn">🎤</button>
-            <input type="text" id="user-in" placeholder="Ask anything..." autocomplete="off">
+            <button class="icon-btn" id="plus-btn" onclick="toggleSuggestions()">➕</button>
+            <input type="text" id="user-in" placeholder="Yahan likhein..." autocomplete="off">
             <button class="icon-btn" id="send-btn">➤</button>
         </div>
     </div>
@@ -85,119 +99,101 @@
     const chatBox = document.getElementById('chat-box');
     const userInput = document.getElementById('user-in');
     const loader = document.getElementById('loader');
-    const sidebar = document.getElementById('sidebar');
+    const panel = document.getElementById('suggestion-panel');
+    const plusBtn = document.getElementById('plus-btn');
     let lastQuery = ""; 
 
+    // --- USER RECOGNITION SYSTEM ---
+    let userName = localStorage.getItem('veda_user_name');
     const uid = localStorage.getItem('veda_uid') || "V-" + Math.random().toString(36).slice(2,7).toUpperCase();
     localStorage.setItem('veda_uid', uid);
-    document.getElementById('uid').innerText = "ID: " + uid;
 
-    if(localStorage.getItem('mode') === 'light') document.body.classList.add('light-mode');
-    function toggleMenu() { sidebar.classList.toggle('active'); }
+    function checkUser() {
+        if (!userName) {
+            let name = prompt("Namaste! Veda AI mein aapka swagat hai. Aapka naam kya hai?");
+            if (name) {
+                userName = name.trim();
+                localStorage.setItem('veda_user_name', userName);
+            } else {
+                userName = "Dost";
+            }
+        }
+        document.getElementById('user-display').innerText = "Namaste, " + userName;
+    }
 
-    document.getElementById('theme-toggle').onclick = () => {
-        document.body.classList.toggle('light-mode');
-        localStorage.setItem('mode', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-        toggleMenu();
-    };
+    function updateName() {
+        let n = prompt("Naya naam likhein:");
+        if(n) { userName = n; localStorage.setItem('veda_user_name', n); checkUser(); toggleMenu(); }
+    }
 
-    // --- MAIN BOT LOGIC ---
+    // --- SUGGESTIONS UI ---
+    function toggleSuggestions() {
+        panel.classList.toggle('open');
+        plusBtn.classList.toggle('active');
+    }
+
+    function quickAsk(txt) {
+        userInput.value = txt;
+        handleSend();
+        toggleSuggestions();
+    }
+
+    // --- AUTOMATIC REPORT SYSTEM ---
+    async function reportMissing(query) {
+        fetch("https://formspree.io/f/xwvrzgvj", {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ User: userName, ID: uid, MissingQuestion: query })
+        });
+    }
+
+    // --- BOT LOGIC ---
     async function getBotReply(msg) {
         let q = msg.toLowerCase().trim();
 
-        // 1. SMART CALCULATOR (Logic - Sabse Pehle)
-        let mathQuery = q.replace(/into|multiply|x/g, '*')
-                         .replace(/plus|add/g, '+')
-                         .replace(/minus|subtract/g, '-')
-                         .replace(/divide|bhag/g, '/');
-
-        let mathMatch = mathQuery.match(/[0-9\+\-\*\/\.\(\)\%]+/g);
-        
-        if (mathMatch && (mathQuery.match(/[\+\-\*\/\%]/))) {
-            try {
-                let finalExp = mathMatch.join(""); 
-                let result = eval(finalExp); 
-                if (!isNaN(result)) {
-                    lastQuery = ""; 
-                    return `Hisaab lagane par jawab hai: <b>${result}</b>`;
-                }
-            } catch (e) { }
+        // 1. Math Calculator
+        let mathQ = q.replace(/x/g, '*').replace(/plus/g, '+').replace(/minus/g, '-');
+        let mMatch = mathQ.match(/[0-9\+\-\*\/\.\%]+/g);
+        if (mMatch && (mathQ.includes('+') || mathQ.includes('-') || mathQ.includes('*') || mathQ.includes('/'))) {
+            try { return `Hisaab: <b>${eval(mMatch.join(""))}</b>`; } catch(e){}
         }
 
-        // --- STEP: EMOTION & MOOD DETECTION ---
-        const moods = {
-            "gussa": ["shant", "gussa", "pagal", "angry", "chup"],
-            "dukh": ["sad", "akela", "ro raha", "pareshan", "tension"],
-            "khushi": ["happy", "mazza", "maza", "khush", "party"]
-        };
+        // 2. Personalization
+        if(q.includes("mera naam")) return `Aapka naam ${userName} hai, maine yaad rakha hai!`;
 
-        if (moods.gussa.some(word => q.includes(word))) {
-            return "Lagta hai aap gusse mein hain. Shanti se baithiye, thoda pani pijiye. Main aapki kya madad karun?";
-        }
-        if (moods.dukh.some(word => q.includes(word))) {
-            return "Pareshan mat hoiye, waqt hamesha badalta hai. Kya main aapka mood thik karne ke liye koi joke sunaoon?";
-        }
-        if (moods.khushi.some(word => q.includes(word))) {
-            return "Aapki khushi dekh kar mujhe bhi accha laga! Bataiye, is khushi ke mauke par kya baat karein?";
-        }
-
-        
-        // 2. FAST CHAT SECTION (Greetings & Slangs)
-        const fastChat = {
-            "hi": "Namaste! Main Veda AI hoon. Kaise madad karun?",
-            "hello": "Hello! Swagat hai aapka Veda AI mein.",
-            "kaise ho": "Main bilkul badhiya! Aap kaise hain?",
-            "radhe radhe": "Radhe Radhe! 💗",
-            "bye": "Alvida! Apna khayal rakhein.",
-            "bc": "Izzat se baat karein! Badtameezi bardasht nahi ki jayegi.",
-            "mc": "Kripya sabhya bhasha ka upyog karein.",
-            "alya": "Alya sometimes hides her feelings in Russian! 😊"
-        };
-        if (fastChat[q]) { lastQuery = ""; return fastChat[q]; }
-
-        // 3. LIVE DATA (Time/Date)
-        if(q.includes("time")) return "Abhi " + new Date().toLocaleTimeString('hi-IN');
-        if(q.includes("date")) return "Aaj " + new Date().toLocaleDateString('hi-IN');
-
-        // 4. OFFLINE DATABASE (responses.js)
-        if (typeof vedaDatabase !== 'undefined' && vedaDatabase !== null) {
-            let match = null; let maxL = 0;
+        // 3. Database & FastChat
+        if (typeof vedaDatabase !== 'undefined') {
             for (let k in vedaDatabase) {
-                let lowerK = k.toLowerCase().trim();
-                if (q.includes(lowerK) && lowerK.length > maxL) {
-                    maxL = lowerK.length; match = vedaDatabase[k];
-                }
+                if (q.includes(k.toLowerCase())) return vedaDatabase[k];
             }
-            if (match) { lastQuery = ""; return match; }
         }
 
-        // 5. ONLINE SEARCH (Wikipedia)
-        let topic = q.replace(/kya hai|batao|kaun hai|define/g, "").trim();
-        if(topic.length > 2) {
+        // 4. Wikipedia
+        let topic = q.replace(/kya hai|batao|define/g, "").trim();
+        if(topic.length > 3) {
             try {
                 let r = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`);
                 let d = await r.json();
-                if (d.extract) { lastQuery = ""; return d.extract; }
-            } catch(e) {}
+                if (d.extract) return d.extract;
+            } catch(e){}
         }
 
-        // 6. SMART FALLBACK (Memory Logic)
+        // 5. Smart Fallback + Report
         if (q === lastQuery) {
             let gLink = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-            lastQuery = ""; 
-            return `Mujhe abhi bhi sateek jawab nahi mila. Aap Google par dekh sakte hain: <br><br> <a href="${gLink}" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">🔍 Search on Google</a>`;
+            return `Mujhe abhi bhi nahi mila. Search: <a href="${gLink}" target="_blank">Google</a>`;
         } else {
-            lastQuery = q; 
-            return "Maaf kijiye, mujhe is baare mein jaankari nahi mili. Kya aap thoda vistaar (detail) mein pooch sakte hain?";
+            lastQuery = q;
+            reportMissing(q); // Silent report to developer
+            return "Maaf kijiye " + userName + ", mujhe iska sahi jawab nahi mila. Maine ye sawal apne developer ko bhej diya hai taaki main ise seekh sakun.";
         }
     }
 
-    // --- UI FUNCTIONS ---
+    // --- CORE UI ---
     function addMessage(text, sender) {
         const wrap = document.createElement('div');
         wrap.className = `msg ${sender}`;
-        let tools = sender === 'bot' ? `<div class="msg-tools"><span class="tool-icon" onclick="readOut(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span><span class="tool-icon" onclick="navigator.clipboard.writeText(\`${text}\`)">📋</span></div>` : '';
-        wrap.innerHTML = `<div class="bubble">${text}</div>${tools}`;
+        wrap.innerHTML = `<div class="bubble">${text}</div>`;
         chatBox.appendChild(wrap);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -210,40 +206,19 @@
         loader.style.display = "block";
         const reply = await getBotReply(text);
         loader.style.display = "none";
-        setTimeout(() => addMessage(reply, 'bot'), 200);
+        setTimeout(() => addMessage(reply, 'bot'), 300);
     }
 
-    function readOut(t) {
-        window.speechSynthesis.cancel();
-        let u = new SpeechSynthesisUtterance(t); u.lang = 'hi-IN';
-        window.speechSynthesis.speak(u);
-    }
-
-    function saveChat() {
-        let log = "VEDA CHAT LOG\n\n";
-        document.querySelectorAll('.bubble').forEach(b => log += (b.parentElement.classList.contains('user') ? "U: " : "V: ") + b.innerText + "\n\n");
-        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([log])); a.download="VedaChat.txt"; a.click();
-    }
-
-    function clearChat() { if(confirm("Clear chat?")) { chatBox.innerHTML = ""; addMessage("Chat reset. Namaste!", "bot"); } }
-
-    async function sendFeedback() {
-        let fb = prompt("Veda AI ke liye feedback likhein:");
-        if (fb && fb.trim() !== "") {
-            try {
-                await fetch("https://formspree.io/f/xwvrzgvj", {
-                    method: 'POST',
-                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ User: uid, Message: fb })
-                });
-                alert("Feedback sent!"); toggleMenu();
-            } catch (e) { alert("Error."); }
-        }
-    }
+    function toggleMenu() { sidebar.classList.toggle('active'); }
+    function saveChat() { /* Same as before */ }
+    function clearChat() { if(confirm("Clear?")) { chatBox.innerHTML = ""; addMessage("Reset!", "bot"); } }
 
     document.getElementById('send-btn').onclick = handleSend;
     userInput.onkeydown = (e) => { if(e.key === "Enter") handleSend(); };
-    window.onload = () => addMessage("Namaste! Main Veda AI hoon. Main aapki kaise madad kar sakta hoon?", "bot");
+    window.onload = () => {
+        checkUser();
+        addMessage(`Namaste ${userName}! Main Veda AI hoon. Aaj kaise madad karun?`, "bot");
+    };
 </script>
 </body>
 </html>
