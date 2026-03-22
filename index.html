@@ -3,92 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI bot</title>
+    <title>Veda AI - Thoughts Sounds</title>
     <style>
         :root { 
             --primary: #7c3aed; --bg: #0b1120; --card: #1e293b; 
             --text: #f1f5f9; --secondary: #94a3b8; --border: rgba(255,255,255,0.1);
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .light-mode {
+            --bg: #f1f5f9; --card: #ffffff; --text: #0f172a;
+            --secondary: #64748b; --border: rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: background 0.3s, color 0.3s; }
+        body { 
+            margin: 0; background: var(--bg); color: var(--text); 
+            font-family: 'Segoe UI', Roboto, sans-serif; height: 100vh; 
+            display: flex; flex-direction: column; overflow: hidden; position: fixed; width: 100%; 
+        }
         
-        /* Fixed Header */
-        header { position: fixed; top: 0; width: 100%; z-index: 100; padding: 15px 20px; display: flex; align-items: center; background: var(--card); border-bottom: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .menu-btn { font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
-        .logo-text { font-weight: 800; color: var(--primary); font-size: 1.2rem; flex: 1; }
+        /* Header */
+        header { 
+            position: fixed; top: 0; width: 100%; z-index: 100; padding: 15px 20px; 
+            display: flex; align-items: center; background: var(--card); 
+            border-bottom: 1px solid var(--border); gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .logo { font-weight: 800; color: var(--primary); font-size: 1.2rem; flex: 1; letter-spacing: 1px; }
+        .h-btn { font-size: 20px; cursor: pointer; color: var(--secondary); margin-left: 12px; }
 
-        /* Sidebar & Swipe to Close */
-        #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: #0f172a; z-index: 1000; padding: 25px; box-shadow: 20px 0 50px rgba(0,0,0,0.5); color: white; }
+        /* Sidebar & Sheets */
+        .panel { 
+            position: fixed; background: var(--card); z-index: 1000; 
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 30px rgba(0,0,0,0.3); 
+        }
+        #sidebar { left: -100%; top: 0; width: 280px; height: 100%; border-right: 1px solid var(--border); }
         #sidebar.active { left: 0; }
-        .side-item { width: 100%; padding: 14px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white; border-radius: 12px; text-align: left; cursor: pointer; }
+        .bottom-sheet { bottom: -100%; left: 0; width: 100%; border-radius: 25px 25px 0 0; padding: 20px; border-top: 2px solid var(--primary); }
+        .bottom-sheet.open { bottom: 0; }
+        .swipe-line { width: 40px; height: 5px; background: var(--secondary); border-radius: 10px; margin: 0 auto 15px; opacity: 0.3; }
 
         /* Chat Layout */
-        #chat-box { flex: 1; overflow-y: auto; padding: 90px 20px 150px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
-        .msg { max-width: 88%; position: relative; animation: slideUp 0.4s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .user { align-self: flex-end; }
-        .bot { align-self: flex-start; }
-        .bubble { padding: 12px 18px; border-radius: 20px; font-size: 15px; line-height: 1.6; word-wrap: break-word; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
-        .bot .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 85px 20px 130px; display: flex; flex-direction: column; gap: 18px; scroll-behavior: smooth; }
+        .msg { max-width: 85%; animation: msgPop 0.3s ease; position: relative; }
+        @keyframes msgPop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .user { align-self: flex-end; } .bot { align-self: flex-start; }
+        .bubble { padding: 12px 18px; border-radius: 20px; font-size: 15px; line-height: 1.6; background: var(--card); border: 1px solid var(--border); }
+        .user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 4px; border: none; }
+        .bot .bubble { border-bottom-left-radius: 4px; }
+        .chat-img { width: 100%; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); }
 
-        /* Bot Tools Area */
-        .tools { display: flex; gap: 14px; margin-top: 8px; padding-left: 5px; align-items: center; }
-        .tool-btn { font-size: 14px; cursor: pointer; color: var(--secondary); opacity: 0.8; }
-        .tool-btn:active { transform: scale(0.9); color: var(--primary); }
-        .source-tag { font-size: 10px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; display: none; font-weight: bold; }
+        /* Tools */
+        .tools { display: flex; gap: 15px; margin-top: 6px; padding: 0 5px; align-items: center; }
+        .t-btn { font-size: 14px; cursor: pointer; color: var(--secondary); opacity: 0.7; }
+        .t-btn:active { color: var(--primary); transform: scale(0.9); }
+        .wiki-icon { color: #3b82f6; font-size: 14px; display: none; }
 
-        /* Input & Footer */
-        .footer-wrap { position: fixed; bottom: 0; width: 100%; background: var(--bg); padding: 10px 20px 15px; z-index: 90; }
-        .input-box { background: var(--card); border-radius: 30px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid var(--border); }
+        /* Input Bar */
+        .footer { position: fixed; bottom: 0; width: 100%; background: var(--bg); padding: 10px 20px 15px; z-index: 90; transition: bottom 0.1s; }
+        .input-area { background: var(--card); border-radius: 30px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid var(--border); }
         input { flex: 1; background: none; border: none; color: var(--text); padding: 12px; outline: none; font-size: 16px; }
-        .credit-text { text-align: center; font-size: 10px; color: var(--secondary); margin-top: 10px; opacity: 0.6; }
+        .mic-btn.recording { color: #ef4444; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
 
-        /* Suggestions Slide Menu */
-        #suggest-menu { position: fixed; bottom: -300px; width: 100%; background: var(--card); border-top: 3px solid var(--primary); border-radius: 25px 25px 0 0; padding: 25px; z-index: 95; display: flex; flex-wrap: wrap; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,0.4); }
-        #suggest-menu.open { bottom: 85px; }
-        .s-btn { background: rgba(124, 58, 237, 0.1); border: 1px solid var(--primary); color: var(--text); padding: 8px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; }
-
-        .loader { display: none; align-self: flex-start; margin: 0 0 10px 20px; font-size: 12px; color: var(--primary); font-weight: bold; }
+        .credit { text-align: center; font-size: 9px; color: var(--secondary); margin-top: 8px; opacity: 0.5; }
     </style>
 </head>
-<body ontouchstart="tStart(event)" ontouchmove="tMove(event)">
-
-<nav id="sidebar">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-        <h3 style="margin:0">Veda Menu</h3>
-        <span onclick="toggleMenu()" style="cursor:pointer; font-size:24px;">✕</span>
-    </div>
-    <button class="side-item" onclick="updateName()">👤 Change Name</button>
-    <button class="side-item" onclick="location.reload()">🔄 Refresh App</button>
-    <div id="side-id" style="font-size:11px; color:var(--secondary); margin-top:20px; line-height:1.8;"></div>
-</nav>
+<body ontouchstart="handleTS(event)" ontouchmove="handleTM(event)">
 
 <header>
-    <div class="menu-btn" onclick="toggleMenu()">☰</div>
-    <div class="logo-text">VEDA AI</div>
-    <div id="header-user" style="font-size:10px; color:var(--secondary); text-align:right;"></div>
+    <div class="h-btn" onclick="toggleSidebar()">☰</div>
+    <div class="logo">VEDA AI</div>
+    <div class="h-btn" onclick="toggleTheme()">🌓</div>
+    <div class="h-btn" onclick="saveChat()">💾</div>
 </header>
 
-<div id="suggest-menu">
-    <button class="s-btn" onclick="quickAsk('Who is Aryan?')">🧒 Aryan</button>
-    <button class="s-btn" onclick="quickAsk('Alya Anime Quote')">🇷🇺 Alya Russian</button>
-    <button class="s-btn" onclick="quickAsk('Economics Chapter 1')">📈 Economics</button>
-    <button class="s-btn" onclick="quickAsk('Math: 500 x 5')">➕ Calc</button>
-    <button class="s-btn" onclick="quickAsk('Joke sunao')">😂 Joke</button>
+<nav id="sidebar" class="panel">
+    <div style="padding:25px;">
+        <h3>Veda Menu</h3>
+        <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+        <div onclick="changeName()" style="padding:15px; cursor:pointer;">👤 Edit Name</div>
+        <div onclick="location.reload()" style="padding:15px; cursor:pointer;">🔄 Restart</div>
+        <div id="user-info" style="margin-top:30px; font-size:11px; color:var(--secondary); line-height:1.8;"></div>
+    </div>
+</nav>
+
+<div id="action-sheet" class="panel bottom-sheet">
+    <div class="swipe-line"></div>
+    <div id="source-display" style="padding:15px; border-bottom:1px solid var(--border);">Source: Database</div>
+    <div onclick="sendFeedback('Report')" style="padding:15px; border-bottom:1px solid var(--border);">📧 Report Bug / Feedback</div>
+    <div onclick="closePanels()" style="padding:15px; color:#ef4444; text-align:center; font-weight:bold;">Close</div>
 </div>
 
 <div id="chat-box"></div>
-<div class="loader" id="bot-loader">Veda is typing...</div>
 
-<div class="footer-wrap">
-    <div class="input-box">
-        <button onclick="toggleSuggestions()" style="background:none; border:none; font-size:22px; cursor:pointer;">➕</button>
-        <input type="text" id="user-in" placeholder="Ask anything..." autocomplete="off">
+<div class="footer" id="footer">
+    <div class="input-area">
+        <button class="h-btn mic-btn" id="mic-btn" onclick="startVoice()" style="margin:0 10px 0 0;">🎤</button>
+        <input type="text" id="user-in" placeholder="Ask Veda anything..." autocomplete="off">
         <button id="send-btn" style="background:none; border:none; color:var(--primary); font-size:24px; cursor:pointer;">➤</button>
     </div>
-    <div class="credit-text">CREATED BY THOUGHTS SOUNDS</div>
+    <div class="credit">CREATED BY THOUGHTS SOUNDS</div>
 </div>
 
 <script src="responses.js"></script>
@@ -96,119 +108,146 @@
 <script>
     const chatBox = document.getElementById('chat-box');
     const userInput = document.getElementById('user-in');
-    const loader = document.getElementById('bot-loader');
+    const footer = document.getElementById('footer');
     const sidebar = document.getElementById('sidebar');
-    const menu = document.getElementById('suggest-menu');
+    const sheet = document.getElementById('action-sheet');
+    const micBtn = document.getElementById('mic-btn');
 
-    let userName = localStorage.getItem('veda_user_name') || "User";
+    let userName = localStorage.getItem('veda_name') || "User";
     const uid = localStorage.getItem('veda_uid') || "V-" + Math.random().toString(36).slice(2,7).toUpperCase();
     localStorage.setItem('veda_uid', uid);
 
-    document.getElementById('header-user').innerText = `${userName} | ${uid}`;
-    document.getElementById('side-id').innerText = `ID: ${uid}\nDev: Thoughts Sounds\nStatus: Online`;
+    document.getElementById('user-info').innerText = `ID: ${uid}\nUser: ${userName}\nVersion: 2.0.1`;
 
-    // --- SWIPE TO CLOSE ---
-    let xDown = null;
-    function tStart(e) { xDown = e.touches[0].clientX; }
-    function tMove(e) {
-        if (!xDown || !sidebar.classList.contains('active')) return;
-        let xUp = e.touches[0].clientX;
-        if (xDown - xUp > 50) toggleMenu(); // Left swipe
-        xDown = null;
+    // --- 1. THEME & KEYBOARD ---
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+        localStorage.setItem('veda_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
     }
+    if(localStorage.getItem('veda_theme') === 'light') document.body.classList.add('light-mode');
 
-    function toggleMenu() { sidebar.classList.toggle('active'); }
-    function toggleSuggestions() { menu.classList.toggle('open'); }
-    function updateName() { 
-        let n = prompt("Naya naam?"); 
-        if(n) { localStorage.setItem('veda_user_name', n); location.reload(); }
-    }
-
-    // --- REPORT & TOOLS ---
-    function sendReport(q, a, type) {
-        fetch("https://formspree.io/f/xwvrzgvj", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ Name: userName, ID: uid, Query: q, BotReply: a, Category: type })
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            const offset = window.innerHeight - window.visualViewport.height;
+            footer.style.bottom = offset > 0 ? `${offset}px` : '0';
+            chatBox.scrollTop = chatBox.scrollHeight;
         });
-        if(type === 'Feedback') alert("Thank you for feedback!");
     }
 
-    function copyText(t) { navigator.clipboard.writeText(t); alert("Copied!"); }
-    function speakText(t) {
+    // --- 2. SWIPE SYSTEM ---
+    let ty = 0, tx = 0;
+    function handleTS(e) { ty = e.touches[0].clientY; tx = e.touches[0].clientX; }
+    function handleTM(e) {
+        let my = e.touches[0].clientY, mx = e.touches[0].clientX;
+        if (my - ty > 60) closePanels(); // Swipe Down
+        if (tx - mx > 60 && sidebar.classList.contains('active')) closePanels(); // Swipe Left
+    }
+    function closePanels() { sidebar.classList.remove('active'); sheet.classList.remove('open'); }
+    function toggleSidebar() { closePanels(); sidebar.classList.toggle('active'); }
+    function openMenu(isWiki) { 
+        document.getElementById('source-display').innerText = isWiki ? "Source: Wikipedia (Live)" : "Source: Veda Database (Internal)";
+        sheet.classList.add('open'); 
+    }
+
+    // --- 3. VOICE & TOOLS ---
+    function startVoice() {
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(!Speech) return alert("Voice not supported");
+        const rec = new Speech(); rec.lang = 'hi-IN';
+        rec.onstart = () => micBtn.classList.add('recording');
+        rec.onend = () => micBtn.classList.remove('recording');
+        rec.onresult = (e) => { userInput.value = e.results[0][0].transcript; handleSend(); };
+        rec.start();
+    }
+
+    function speak(t) {
         window.speechSynthesis.cancel();
         let s = new SpeechSynthesisUtterance(t); s.lang = 'hi-IN';
         window.speechSynthesis.speak(s);
     }
 
-    // --- CORE LOGIC ---
-    function addMsg(text, sender, isWiki = false) {
-        const div = document.createElement('div');
-        div.className = `msg ${sender}`;
-        let tools = sender === 'bot' ? `
-            <div class="tools">
-                <span class="tool-btn" onclick="speakText(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span>
-                <span class="tool-btn" onclick="copyText(\`${text}\`)">📋</span>
-                <span class="source-tag" style="display:${isWiki?'inline':'none'}">WIKI</span>
-                <span class="tool-btn" onclick="alert('Liked!')">👍</span>
-                <span class="tool-btn" onclick="sendReport('UserLiked', \`${text}\`, 'Feedback')">👎</span>
-                <span class="tool-btn" onclick="sendReport('ReportIssue', \`${text}\`, 'Technical')">⋮</span>
-            </div>` : '';
-        
-        div.innerHTML = `<div class="bubble">${text}</div>${tools}`;
-        chatBox.appendChild(div);
+    function sendFeedback(type, q="N/A", a="N/A") {
+        fetch("https://formspree.io/f/xwvrzgvj", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ User: userName, ID: uid, Type: type, Question: q, Bot: a })
+        });
+        if(type === 'Report') alert("Feedback sent to Thoughts Sounds!");
+    }
+
+    // --- 4. CORE LOGIC ---
+    function addMsg(text, sender, isWiki=false, img=null) {
+        const d = document.createElement('div');
+        d.className = `msg ${sender}`;
+        let imgHtml = img ? `<img src="${img}" class="chat-img">` : "";
+        let tools = sender === 'bot' ? `<div class="tools">
+            <span class="t-btn" onclick="speak(\`${text.replace(/[`'"]/g, "")}\`)">🔊</span>
+            <span class="t-btn" onclick="navigator.clipboard.writeText(\`${text}\`)">📋</span>
+            <span class="wiki-icon" style="display:${isWiki?'inline':'none'}">🌐</span>
+            <span class="t-btn" onclick="this.style.color='var(--primary)'; sendFeedback('Like','Req', \`${text}\`)">👍</span>
+            <span class="t-btn" onclick="this.style.color='#ef4444'; sendFeedback('Dislike','Req', \`${text}\`)">👎</span>
+            <span class="t-btn" onclick="openMenu(${isWiki})">⋮</span>
+        </div>` : '';
+        d.innerHTML = `<div class="bubble">${text}${imgHtml}</div>${tools}`;
+        chatBox.appendChild(d);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    async function getBotReply(msg) {
+    async function getReply(msg) {
         let q = msg.toLowerCase().trim();
-
-        // 1. Math Logic
-        let mathExp = q.replace(/x/g, '*').replace(/plus/g, '+').replace(/minus/g, '-').replace(/into/g, '*');
-        let mMatch = mathExp.match(/[0-9\+\-\*\/\.\%]+/g);
-        if (mMatch && (mathExp.includes('+') || mathExp.includes('-') || mathExp.includes('*') || mathExp.includes('/'))) {
-            try { return {t: `Hisaab: <b>${eval(mMatch.join(""))}</b>`, w: false}; } catch(e){}
+        
+        // A. Math Solver (4 into 1000 etc.)
+        let mathQ = q.replace(/into|x|multiply/g, '*').replace(/plus/g, '+').replace(/minus/g, '-').replace(/divide/g, '/');
+        let mMatch = mathQ.match(/[0-9\+\-\*\/\.\s]+/);
+        if(mMatch && (mathQ.includes('*') || mathQ.includes('+') || mathQ.includes('-') || mathQ.includes('/'))) {
+            try { return {t: `Hisaab: <b>${eval(mMatch[0])}</b>`, w: false, i: null}; } catch(e){}
         }
 
-        // 2. Database (responses.js)
+        // B. Database (responses.js)
         if (typeof vedaDatabase !== 'undefined') {
             for (let k in vedaDatabase) {
-                if (q.includes(k.toLowerCase())) return {t: vedaDatabase[k], w: false};
+                if (q.includes(k.toLowerCase())) {
+                    let res = vedaDatabase[k];
+                    return typeof res === 'object' ? {t: res.text, w: false, i: res.image} : {t: res, w: false, i: null};
+                }
             }
         }
 
-        // 3. Wikipedia API
+        // C. Wikipedia API
         try {
             let r = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
             let d = await r.json();
-            if (d.extract) return {t: d.extract, w: true};
+            if (d.extract) return {t: d.extract, w: true, i: d.thumbnail ? d.thumbnail.source : null};
         } catch(e){}
 
-        // 4. Fallback & Silent Report
-        let fail = `Maaf kijiye ${userName}, mujhe ye nahi pata. Maine ye Thoughts Sounds ko report kar diya hai.`;
-        sendReport(q, "Missing Knowledge", "Knowledge Gap");
-        return {t: fail, w: false};
+        // D. Fallback & Report
+        sendFeedback("Missing_Knowledge", q, "None");
+        return {t: "Maaf kijiye, mujhe iski jankari nahi mili. Maine developer ko report bhej di hai.", w: false, i: null};
     }
 
     async function handleSend() {
-        const t = userInput.value.trim();
-        if(!t) return;
-        addMsg(t, 'user');
+        const val = userInput.value.trim();
+        if(!val) return;
+        addMsg(val, 'user');
         userInput.value = "";
-        loader.style.display = "block";
-        const reply = await getBotReply(t);
-        loader.style.display = "none";
-        setTimeout(() => addMsg(reply.t, 'bot', reply.w), 300);
+        const res = await getReply(val);
+        setTimeout(() => addMsg(res.t, 'bot', res.w, res.i), 400);
     }
 
-    function quickAsk(v) { userInput.value = v; handleSend(); if(menu.classList.contains('open')) toggleSuggestions(); }
-    
+    function changeName() {
+        let n = prompt("What's your name?");
+        if(n) { localStorage.setItem('veda_name', n); location.reload(); }
+    }
+
+    function saveChat() {
+        let log = "";
+        document.querySelectorAll('.bubble').forEach(b => log += b.innerText + "\n\n");
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([log])); a.download="Veda_Chat.txt"; a.click();
+    }
+
     document.getElementById('send-btn').onclick = handleSend;
     userInput.onkeydown = (e) => { if(e.key === "Enter") handleSend(); };
-    window.onload = () => {
-        if(!localStorage.getItem('veda_user_name')) updateName();
-        addMsg(`Namaste ${userName}! Main Veda AI hoon. Kaise madad karun?`, 'bot');
-    };
+    window.onload = () => addMsg(`Namaste ${userName}! Main Veda AI hoon.`, 'bot');
 </script>
 </body>
 </html>
