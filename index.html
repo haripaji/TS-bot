@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI Bot - Ultimate Edition</title>
+    <title>Veda AI - The Learning Bot</title>
     <style>
         :root { --primary: #10a37f; --bg: #343541; --sidebar: #202123; --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #444654; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; }
 
-        header { width: 100%; height: 60px; background: rgba(52, 53, 65, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; z-index: 100; justify-content: space-between; flex-shrink: 0; }
+        header { width: 100%; height: 60px; background: rgba(52, 53, 65, 0.95); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; z-index: 100; justify-content: space-between; flex-shrink: 0; }
         .title { font-weight: 600; font-size: 1.1rem; color: var(--primary); }
         .user-info { font-size: 10px; color: #8e8ea0; text-align: right; line-height: 1.2; }
 
@@ -20,20 +20,22 @@
         .bubble { padding: 12px 16px; border-radius: 15px; font-size: 15px; line-height: 1.6; word-wrap: break-word; }
         .user .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-right-radius: 2px; }
         .bot .bubble { background: none; padding-left: 0; }
-        .bubble img { max-width: 100%; border-radius: 10px; margin-top: 10px; display: block; border: 1px solid var(--border); }
         
         .action-bar { display: flex; gap: 18px; font-size: 15px; color: #8e8ea0; margin-top: 5px; }
         .action-bar span { cursor: pointer; transition: 0.2s; }
         .action-bar span:hover { color: var(--primary); }
 
-        #settings-menu { position: fixed; top: 0; left: -100%; width: 80%; height: 100%; background: var(--sidebar); z-index: 200; padding: 25px; transition: 0.3s ease; box-shadow: 10px 0 30px rgba(0,0,0,0.5); overflow-y: auto; }
-        #settings-menu.open { transform: translateX(100%); }
-        .menu-btn { width: 100%; background: #2d2d39; border: none; color: white; padding: 15px; text-align: left; margin-bottom: 12px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+        /* Slider Menu */
+        #settings-menu { position: fixed; top: 0; left: -100%; width: 85%; max-width: 320px; height: 100%; background: var(--sidebar); z-index: 1001; padding: 25px; transition: 0.4s ease; box-shadow: 10px 0 30px rgba(0,0,0,0.5); overflow-y: auto; }
+        #settings-menu.open { left: 0; }
+        #menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(3px); }
 
-        #category-popup { display: none; position: fixed; bottom: 85px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 15px; padding: 10px; z-index: 150; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 200px; }
+        .menu-btn { width: 100%; background: #2d2d39; border: none; color: white; padding: 14px; text-align: left; margin-bottom: 12px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+        .profile-card { background: #2d2d39; padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .calendar-card { background: #1a1b1e; padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; text-align: center; }
+        .time-text { font-size: 1.6rem; font-weight: bold; color: var(--primary); }
 
         .footer { width: 100%; padding: 10px 15px 30px; background: var(--bg); flex-shrink: 0; }
-        #source-selector { display: flex; gap: 12px; margin-bottom: 10px; font-size: 11px; padding-left: 5px; overflow-x: auto; white-space: nowrap; }
         .input-container { max-width: 800px; margin: 0 auto; background: #40414f; border-radius: 15px; display: flex; align-items: center; padding: 10px 15px; border: 1px solid var(--border); }
         input { flex: 1; background: none; border: none; color: white; outline: none; font-size: 16px; }
 
@@ -42,145 +44,78 @@
 </head>
 <body>
 
+<div id="menu-overlay" onclick="toggleMenu(false)"></div>
+
 <header>
     <button onclick="toggleMenu(true)" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">☰</button>
-    <div class="title">Veda AI bot</div>
-    <div class="user-info" id="header-user">User<br>VEDA-0000</div>
+    <div class="title">Veda AI</div>
+    <div id="header-user" class="user-info">User<br>VEDA-0000</div>
 </header>
 
 <div id="chat-box"></div>
 
-<div id="category-popup">
-    <div style="padding:5px 10px; color:var(--primary); font-size:11px; opacity:0.7;">SWITCH CATEGORY</div>
-    <button class="menu-btn" onclick="setQuickMode('auto', '🤖 Auto')">🤖 Auto (Default)</button>
-    <button class="menu-btn" onclick="setQuickMode('math', '🧮 Math')">🧮 Math Solver</button>
-    <button class="menu-btn" onclick="setQuickMode('study', '📚 Study')">📚 Study Mode</button>
-    <button class="menu-btn" onclick="setQuickMode('anime', '⛩️ Anime')">⛩️ Anime Corner</button>
-    <button class="menu-btn" onclick="setQuickMode('creative', '🎨 Creative')">🎨 Creative Writing</button>
-</div>
-
 <div class="footer">
-    <div id="source-selector">
-        <span id="mode-auto" onclick="setMode('auto')" style="color:var(--primary); border-bottom:2px solid var(--primary); cursor:pointer;">Auto</span>
-        <span id="mode-math" onclick="setMode('math')" style="cursor:pointer; color:#8e8ea0;">Math</span>
-        <span id="mode-wiki" onclick="setMode('wiki')" style="cursor:pointer; color:#8e8ea0;">Wikipedia</span>
-        <span id="mode-google" onclick="setMode('google')" style="cursor:pointer; color:#8e8ea0;">Google</span>
-    </div>
     <div class="input-container">
-        <button onclick="toggleCategoryMenu()" style="background:none; border:none; color:#8e8ea0; font-size:24px; margin-right:10px; cursor:pointer;">➕</button>
-        <input type="text" id="user-in" placeholder="Ask Veda anything..." autocomplete="off">
+        <button style="background:none; border:none; color:#8e8ea0; font-size:24px; margin-right:10px; cursor:pointer;">➕</button>
+        <input type="text" id="user-in" placeholder="Veda ko kuch sikhaein ya poochein..." autocomplete="off">
         <button onclick="handleSend()" style="background:none; border:none; color:var(--primary); font-size:24px; cursor:pointer;">⬆️</button>
     </div>
 </div>
 
 <div id="settings-menu">
-    <h3 style="color:var(--primary); margin-bottom:15px;">Veda Settings</h3>
+    <h3 style="color:var(--primary); margin-bottom:20px;">Veda Settings</h3>
     
-    <div style="background: #2d2d39; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-        <div id="menu-user-display" style="font-weight: bold; margin-bottom:10px;">User: Loading...</div>
-        <button class="menu-btn" style="background:var(--primary); margin:0;" onclick="triggerSignup()">👤 Edit Profile / Sign Up</button>
+    <div class="profile-card">
+        <div id="menu-user-name" style="font-weight: bold; font-size: 1.1rem;">User Name</div>
+        <div id="menu-user-id" style="font-size: 11px; color: #8e8ea0; margin-bottom: 12px;">ID: VEDA-0000</div>
+        <button class="menu-btn" style="background:var(--primary); margin:0; text-align:center;" onclick="triggerSignup()">👤 Edit Profile</button>
     </div>
 
-    <button class="menu-btn" onclick="alert('Veda About section loading from external file...')">ℹ️ About Veda</button>
-    <button class="menu-btn" onclick="downloadChat()">📩 Save Chat Log</button>
-    <button class="menu-btn" onclick="deleteHistory()">🗑 Delete History</button>
-    <button class="menu-btn" onclick="manualFeedback()">📨 Feedback to Dev</button>
-    <button class="menu-btn" onclick="location.reload()">🔄 Force Refresh</button>
-    
-    <div id="menu-info" style="font-size:11px; color:#8e8ea0; position:absolute; bottom:25px;"></div>
+    <div class="calendar-card">
+        <div id="live-time" class="time-text">00:00:00</div>
+        <div id="live-date" style="font-size: 0.9rem; color: #8e8ea0; margin: 5px 0;">Date</div>
+        <div id="live-day" style="font-size: 0.8rem; color: var(--primary); font-weight: bold;">Day</div>
+    </div>
+
+    <button class="menu-btn" onclick="alert('Veda AI V1.9\nStatus: Learning Enabled')">ℹ️ About Veda</button>
+    <button class="menu-btn" style="color:#ff4d4d;" onclick="clearMemory()">🧠 Reset Brain</button>
+    <button class="menu-btn" onclick="location.reload()">🔄 Refresh</button>
 </div>
 
-<script src="core.js"></script>
-<script src="study.js"></script>
-<script src="anime.js"></script>
-<script src="creative.js"></script>
-<script src="math.js"></script>
-
 <script>
-    const FORMSPREE_ID = "xwvrzgvj";
-    let chatHistory = [];
-    let currentMode = "auto";
     let vedaMemory = JSON.parse(localStorage.getItem('vedaMemory')) || {};
-    let userName = localStorage.getItem('vedaName');
+    let learningMode = { active: false, question: "" };
+    let userName = localStorage.getItem('vedaName') || "User";
     const vedaUserID = localStorage.getItem('vedaUserID') || "VEDA-" + Math.floor(1000 + Math.random() * 9000);
     localStorage.setItem('vedaUserID', vedaUserID);
 
     window.onload = () => {
         updateUI();
-        if(!userName) {
-            addMessage("Namaste! Main Veda AI hoon. Aapka naam kya hai?", "bot");
-        } else {
-            addMessage(`Swagat hai, ${userName}! Aaj main aapki kaise madad kar sakta hoon?`, "bot");
-        }
+        startClock();
+        addMessage(`Namaste ${userName}! Main Veda hoon. Aap mujhse sawal pooch sakte hain ya mujhe naye jawab sikha sakte hain.`, "bot");
     };
 
+    function startClock() {
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('live-time').innerText = now.toLocaleTimeString('en-GB');
+            document.getElementById('live-date').innerText = now.toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            document.getElementById('live-day').innerText = days[now.getDay()];
+        }, 1000);
+    }
+
     function updateUI() {
-        document.getElementById('header-user').innerHTML = `${userName || "User"}<br>${vedaUserID}`;
-        document.getElementById('menu-user-display').innerHTML = `User: ${userName || "Unknown"}<br><span style="font-size:10px; color:#8e8ea0;">ID: ${vedaUserID}</span>`;
+        document.getElementById('header-user').innerHTML = `${userName}<br>${vedaUserID}`;
+        document.getElementById('menu-user-name').innerText = userName;
+        document.getElementById('menu-user-id').innerText = "ID: " + vedaUserID;
     }
 
-    // --- Core Intelligence Router ---
-    async function getReply(q) {
-        const query = q.toLowerCase();
-
-        // 1. Math Calculation Logic (Instant)
-        if (currentMode === "math" || hasMath(query)) {
-            try {
-                // Regex to allow only numbers and basic math operators
-                let expression = query.replace(/[^-()\d/*+. ]/g, '');
-                if(expression.trim() !== "") {
-                    let result = eval(expression); // Built-in math solver
-                    return `🧮 **Calculation Result:** <br> ${expression} = **${result}**`;
-                }
-            } catch(e) { if(currentMode === "math") return "Maaf kijiye, main ye calculate nahi kar pa raha hoon."; }
-        }
-
-        // 2. Google Mode
-        if(currentMode === "google") {
-            return `Aap Google par dekh sakte hain: <br><a href="https://www.google.com/search?q=${encodeURIComponent(q)}" target="_blank" style="color:var(--primary)">Google Search 🔍</a>`;
-        }
-
-        // 3. Wiki Mode
-        if(currentMode === "wiki") return await fetchWiki(q);
-
-        // 4. AUTO MODE: Scan all JS files dynamically
-        if(vedaMemory[query]) return vedaMemory[query];
-
-        const dbs = [
-            {data: typeof vedaCore!=='undefined'?vedaCore:{}, prefix: "🤖 "},
-            {data: typeof vedaStudy!=='undefined'?vedaStudy:{}, prefix: "📚 **Study:** "},
-            {data: typeof vedaAnime!=='undefined'?vedaAnime:{}, prefix: "⛩️ **Anime:** "},
-            {data: typeof vedaCreative!=='undefined'?vedaCreative:{}, prefix: "🎨 **Creative:** "},
-            {data: typeof vedaMath!=='undefined'?vedaMath:{}, prefix: "🧮 **Math:** "}
-        ];
-
-        for(let db of dbs) {
-            for(let key in db.data) {
-                if(query.includes(key.toLowerCase())) return db.prefix + db.data[key];
-            }
-        }
-
-        // 5. Final Fallback
-        return await fetchWiki(q);
+    function toggleMenu(s) {
+        document.getElementById('settings-menu').classList.toggle('open', s);
+        document.getElementById('menu-overlay').style.display = s ? 'block' : 'none';
     }
 
-    function hasMath(q) {
-        return /[\d]+[+\-*/][\d]+/.test(q); // Check if contains digits and operators
-    }
-
-    async function fetchWiki(q) {
-        try {
-            let res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
-            let data = await res.json();
-            if(data.extract) {
-                let img = (data.originalimage) ? `<img src="${data.originalimage.source}">` : "";
-                return `${img}${data.extract}`;
-            }
-        } catch(e) {}
-        return "Mujhe iski jankari nahi mili. Mode badal kar dekhiye!";
-    }
-
-    // --- Message & UI Helpers ---
     async function handleSend() {
         const input = document.getElementById('user-in');
         const val = input.value.trim();
@@ -189,110 +124,96 @@
         addMessage(val, 'user');
         input.value = "";
 
-        if (!userName) {
-            userName = val;
-            localStorage.setItem('vedaName', userName);
-            updateUI();
-            addMessage(`Aapse milkar khushi hui, ${userName}! Main taiyaar hoon.`, 'bot');
-            return;
-        }
-
         const box = document.getElementById('chat-box');
         const typing = document.createElement('div');
         typing.className = 'msg-container bot';
-        typing.id = 'typing';
         typing.innerHTML = `<div class="bubble" style="color:#8e8ea0;">Veda is thinking...</div>`;
         box.appendChild(typing);
         box.scrollTop = box.scrollHeight;
 
-        let reply = await getReply(val);
-        typing.remove();
-        addMessage(reply, 'bot');
+        setTimeout(() => {
+            typing.remove();
+            const reply = processLogic(val);
+            addMessage(reply, 'bot');
+        }, 600);
+    }
+
+    function processLogic(q) {
+        const query = q.toLowerCase();
+        const now = new Date();
+
+        // 1. Learning Response
+        if (learningMode.active) {
+            vedaMemory[learningMode.question] = q;
+            localStorage.setItem('vedaMemory', JSON.stringify(vedaMemory));
+            learningMode.active = false;
+            return `Shukriya! Maine yaad kar liya hai ki "${learningMode.question}" ka matlab "${q}" hota hai.`;
+        }
+
+        // 2. Memory Check
+        if (vedaMemory[query]) return vedaMemory[query] + " <br><small style='color:var(--primary); font-size:9px;'>(Learned)</small>";
+
+        // 3. Time/Date/Day (Sirf poochne par)
+        if (query.includes("time") || query.includes("samay")) return `Abhi **${now.toLocaleTimeString()}** ho rahe hain.`;
+        if (query.includes("date") || query.includes("tarikh")) return `Aaj ki tarikh **${now.toLocaleDateString()}** hai.`;
+        if (query.includes("day") || query.includes("din")) {
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            return `Aaj **${days[now.getDay()]}** hai.`;
+        }
+
+        // 4. Math Solver
+        if (/[\d]+[+\-*/][\d]+/.test(query)) {
+            try { return `🧮 Hisab: **${eval(query.replace(/[^-()\d/*+. ]/g, ''))}**`; } catch(e) {}
+        }
+
+        // 5. If Unknown -> Trigger Learning
+        learningMode.active = true;
+        learningMode.question = query;
+        return `Mujhe iska jawab nahi pata. **Kya aap mujhe sikha sakte hain?** (Bas iska jawab likh kar bhejiye)`;
     }
 
     function addMessage(txt, sender) {
         const box = document.getElementById('chat-box');
         const container = document.createElement('div');
         container.className = `msg-container ${sender}`;
-        let actions = (sender === 'bot') ? `
+        const safeTxt = txt.replace(/'/g, "\\'");
+        const actions = (sender === 'bot') ? `
             <div class="action-bar">
-                <span onclick="speak(\`${txt.replace(/"/g, '&quot;')}\`)">🔊</span>
-                <span onclick="copy(\`${txt.replace(/"/g, '&quot;')}\`)">📋</span>
-                <span onclick="feedback(false, this, \`${txt.replace(/"/g, '&quot;')}\`)">👎</span>
+                <span onclick="speak('${safeTxt}')">🔊</span>
+                <span onclick="likeResponse(this)">👍</span>
+                <span onclick="navigator.clipboard.writeText('${safeTxt}'); alert('Copied!')">📋</span>
             </div>` : "";
         container.innerHTML = `<div class="bubble">${txt}</div>${actions}`;
         box.appendChild(container);
         box.scrollTop = box.scrollHeight;
-        chatHistory.push({s: sender, t: txt});
     }
 
-    function setMode(mode) {
-        currentMode = mode;
-        ["auto", "wiki", "google", "math"].forEach(m => {
-            const el = document.getElementById(`mode-${m}`);
-            if(el) {
-                el.style.color = (m === mode) ? "var(--primary)" : "#8e8ea0";
-                el.style.borderBottom = (m === mode) ? "2px solid var(--primary)" : "none";
-            }
-        });
+    function likeResponse(el) {
+        el.style.color = "var(--primary)";
+        addMessage("Khushi hui ki aapko mera jawab pasand aaya! 😊", "bot");
     }
 
-    function setQuickMode(m, label) {
-        setMode(m);
-        toggleCategoryMenu();
-        const hint = document.createElement('div');
-        hint.style = "text-align:center; font-size:10px; color:#8e8ea0; margin:10px 0;";
-        hint.innerText = `--- Active: ${label} ---`;
-        document.getElementById('chat-box').appendChild(hint);
-    }
-
-    function toggleCategoryMenu() {
-        const p = document.getElementById('category-popup');
-        p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-    }
-
-    function toggleMenu(s) {
-        const m = document.getElementById('settings-menu');
-        if(s) { m.classList.add('open'); updateInfo(); }
-        else m.classList.remove('open');
-    }
-
-    function triggerSignup() {
-        let n = prompt("Naya naam:", userName || "");
-        if(n) { userName = n; localStorage.setItem('vedaName', n); updateUI(); }
-    }
-
-    function copy(t) { navigator.clipboard.writeText(t); alert("Copied!"); }
-    function speak(t) { 
+    function speak(t) {
         window.speechSynthesis.cancel();
         let u = new SpeechSynthesisUtterance(t);
         u.lang = 'hi-IN';
         window.speechSynthesis.speak(u);
     }
 
-    async function sendToDeveloper(sub, msg) {
-        fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: userName, id: vedaUserID, subject: sub, message: msg })
-        });
+    function triggerSignup() {
+        let n = prompt("Naya naam:");
+        if(n) { userName = n; localStorage.setItem('vedaName', n); updateUI(); }
     }
 
-    function deleteHistory() { if(confirm("Clear Chat?")) { document.getElementById('chat-box').innerHTML = ""; chatHistory = []; } }
-    function updateInfo() { document.getElementById('menu-info').innerText = `V1.8 Stable | Cache: ${chatHistory.length}`; }
-    function downloadChat() {
-        let log = chatHistory.map(m => `${m.s.toUpperCase()}: ${m.t}`).join('\n');
-        let blob = new Blob([log], {type: 'text/plain'});
-        let a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = "Veda_Chat.txt"; a.click();
+    function clearMemory() {
+        if(confirm("Kya aap meri seekhi hui baatein mita dena chahte hain?")) {
+            localStorage.removeItem('vedaMemory');
+            vedaMemory = {};
+            location.reload();
+        }
     }
 
     document.getElementById('user-in').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSend(); });
-    window.onclick = (e) => {
-        if(!e.target.closest('#category-popup') && !e.target.innerText.includes('➕')) {
-            document.getElementById('category-popup').style.display = 'none';
-        }
-    };
 </script>
 </body>
 </html>
