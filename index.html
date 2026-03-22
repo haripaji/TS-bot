@@ -79,7 +79,7 @@
 </div>
 
 <div class="footer">
-    <div> class="input-container">
+    <div class="input-container">
         <button onclick="event.stopPropagation(); toggleCategory()" style="background:none; border:none; color:#8e8ea0; font-size:24px; margin-right:12px; cursor:pointer;">➕</button>
         <input type="text" id="user-in" placeholder="Ask Veda anything..." autocomplete="off">
         <button onclick="handleSend()" style="background:none; border:none; color:var(--primary); font-size:24px; cursor:pointer;">⬆️</button>
@@ -134,59 +134,60 @@
     async function processLogic(q) {
     const query = q.toLowerCase().trim();
     
-    // --- AUTO CATEGORY SCANNER ---
-    let currentMode = "General";
-    
-    const studyKeywords = ["science", "history", "geography", "notes", "exam", "padhai", "school", "college"];
-    const mathKeywords = ["solve", "calculate", "plus", "minus", "divided", "multiply", "formula", "root"];
-    const animeKeywords = ["naruto", "one piece", "gojo", "itachi", "luffy", "manga", "otaku", "death note"];
-
-    if (studyKeywords.some(k => query.includes(k))) currentMode = "Study";
-    else if (mathKeywords.some(k => query.includes(k)) || /^[\d+\-*/().\s]+$/.test(query)) currentMode = "Math";
-    else if (animeKeywords.some(k => query.includes(k))) currentMode = "Anime";
-
-    // UI par mode dikhane ke liye (Optional)
-    console.log("Detected Mode: " + currentMode);
-    // ----------------------------
-
-    // 1. Learning State
+    // 1. Learning State (Priority #1)
     if (learningMode.active) {
         vedaMemory[learningMode.question] = q;
         localStorage.setItem('vedaMemory', JSON.stringify(vedaMemory));
         learningMode.active = false;
-        return "Dhanyawad! Maine ise yaad kar liya hai. Export button se ise permanent save karein.";
+        return "Dhanyawad! Maine ise yaad kar liya hai. 😊";
     }
 
-    // 2. Math Auto-Solve (Agar Math mode detect hua ya direct equation hai)
-    if (currentMode === "Math" || /^[\d+\-*/().\s]+$/.test(query)) {
+    // 2. Math Auto-Solver (Agar query sirf numbers aur symbols hai)
+    if (/^[\d+\-*/().\s^]+$/.test(query) && /[0-9]/.test(query)) {
         try { 
             let res = eval(query.replace(/[^-()\d/*+. ]/g, ''));
-            return `🧮 **Math Mode Auto-Detected**\nResult: **${res}**`; 
-        } catch(e) { /* math error handle */ }
+            return `🧮 Calculation Result:\n**${res}**`; 
+        } catch(e) { /* silent fail to next source */ }
     }
 
-    // 3. STEP 1: Scan Modular JS Files (With Mode Priority)
-    const dbs = [window.vedaCore, window.vedaStudy, window.vedaAnime, window.vedaLearned]; 
-    for(let db of dbs) { if(db && db[query]) return db[query]; }
+    // 3. STEP 1: Search ALL Local JS Files (Modular Files)
+    // Yahan saare files ke objects ko check kiya ja raha hai
+    const localFiles = [
+        { data: window.vedaCore, name: "Core" },
+        { data: window.vedaStudy, name: "Study" },
+        { data: window.vedaAnime, name: "Anime" },
+        { data: window.vedaLearned, name: "Responses" }
+    ];
 
-    // 4. STEP 2: Session Memory
-    if (vedaMemory[query]) return vedaMemory[query] + " <br><small style='color:var(--primary); font-size:9px;'>(Learned)</small>";
+    for (let file of localFiles) {
+        if (file.data && file.data[query]) {
+            return file.data[query]; // File se jawab milte hi return
+        }
+    }
 
-    // 5. STEP 3: Wikipedia (Greeting Check)
-    const common = ["hi", "hello", "hey", "namaste", "bye", "kaise ho"];
-    if (!common.includes(query)) {
-        const wiki = await fetchWiki(query);
-        if (wiki) return (currentMode !== "General" ? `<b>[${currentMode} Mode]</b><br>` : "") + wiki;
+    // 4. STEP 2: Search Session Memory (Current Learning)
+    if (vedaMemory[query]) {
+        return vedaMemory[query] + " <br><small style='color:var(--primary); font-size:9px;'>(Learned in this session)</small>";
+    }
+
+    // 5. STEP 3: Auto Wikipedia (Only for non-greetings)
+    const commonGreetings = ["hi", "hello", "hey", "namaste", "bye", "kaise ho", "hlo"];
+    if (!commonGreetings.includes(query)) {
+        const wikiData = await fetchWiki(query); // Ismein picture logic pehle se hai
+        if (wikiData) return wikiData;
     } else {
-        return "Namaste! Main Veda AI hoon. Kaise madad karun?";
+        return "Namaste! Main Veda AI hoon. Main aapki files aur Wikipedia se seekh kar jawab deta hoon. Kaise madad karun?";
     }
 
-    // 6. Default -> Learning
+    // 6. FINAL STEP: Learning Trigger (If nothing found)
     learningMode.active = true;
     learningMode.question = query;
     const gUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-    return `Mujhe iska jawab nahi pata. **Kya aap mujhe sikha sakte hain?** <br><button onclick="window.open('${gUrl}')" class="menu-btn" style="display:inline-block; width:auto; margin-top:10px;">Search Google 🔍</button>`;
+    
+    return `Mujhe apne database ya Wikipedia par iska jawab nahi mila. 
+            <br>Kya aap mujhe iska sahi jawab sikha sakte hain? <br><br><button onclick="window.open('${gUrl}')" class="menu-btn" style="display:inline-block; width:auto; border:1px solid var(--primary);">Search Google 🔍</button>`;
 }
+
 
 
     async function fetchWiki(query) {
