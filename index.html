@@ -76,20 +76,21 @@
     <button class="menu-btn" onclick="exportLearnedData()" style="background:var(--primary); font-weight:bold;">🚀 Export responses.js</button>
     <button class="menu-btn" onclick="downloadChat()">📥 Download Chat (.txt)</button>
     <button class="menu-btn" onclick="clearBrain()" style="color:#ef4444;">🧠 Reset Memory</button>
-</div>
-<div style="text-align: center; margin-bottom: 10px;">
-    <label style="font-family: monospace; font-weight: bold; color: #ff0055;">
-        <input type="checkbox" id="advanceModeToggle" onchange="toggleAdvanceTheme()"> 
-        ⚡ ACTIVATE VEDA PRO (Advance Mode)
-    </label>
-</div>
+
 
 <div class="footer">
     <div class="input-container">
         <button onclick="event.stopPropagation(); toggleCategory()" style="background:none; border:none; color:#8e8ea0; font-size:24px; margin-right:12px; cursor:pointer;">➕</button>
         <input type="text" id="user-in" placeholder="Ask Veda anything..." autocomplete="off">
         <button onclick="handleSend()" style="background:none; border:none; color:var(--primary); font-size:24px; cursor:pointer;">⬆️</button>
-    </div>     
+    </div>   
+    
+<div style="text-align: center; margin-bottom: 10px;">
+    <label style="font-family: monospace; font-weight: bold; color: #ff0055;">
+        <input type="checkbox" id="advanceModeToggle" onchange="toggleAdvanceTheme()"> 
+        ⚡ ACTIVATE VEDA PRO (Advance Mode)
+    </label>
+</div>
 </div>
 <div class="footer" style="color:#ffeeef;">"Created by Thoughts Sounds"</div>
     
