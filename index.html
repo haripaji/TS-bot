@@ -95,123 +95,182 @@
 </div>
 
 <script>
-    let vedaMemory = JSON.parse(localStorage.getItem('vedaMemory')) || {};
-    let learningMode = { active: false, question: "" };
-    let currentMode = "Auto";
-    let chatLog = [];
-    let userName = localStorage.getItem('vedaUserName') || "User";
-    const vedaID = localStorage.getItem('vedaUserID') || "VEDA-" + Math.floor(1000 + Math.random() * 9000);
+let vedaMemory = JSON.parse(localStorage.getItem('vedaMemory')) || {};
+let currentMode = "Auto";
+let chatLog = [];
+let userName = localStorage.getItem('vedaUserName') || "User";
+const vedaID = localStorage.getItem('vedaUserID') || "VEDA-" + Math.floor(1000 + Math.random() * 9000);
 
-    const VERCEL_URL = "https://veda-brain-q1ju.vercel.app/ask";
-    const FORMSPREE = "https://formspree.io/f/YOUR_ID"; // Apni ID dalein
+const VERCEL_URL = "https://veda-brain-q1ju.vercel.app/ask";
 
-    window.onload = () => {
-        if(localStorage.getItem('vedaUserName')) {
-            document.getElementById('login-overlay').style.display = 'none';
-            updateUI();
-        }
-    };
+/* ================== SMART NLP ================== */
+function detectIntent(q) {
+    q = q.toLowerCase();
 
-    function doLogin() {
-        const name = document.getElementById('user-name-in').value.trim();
-        if(!name) return alert("Naam likhein!");
-        userName = name;
-        localStorage.setItem('vedaUserName', name);
-        localStorage.setItem('vedaUserID', vedaID);
-        document.getElementById('login-overlay').style.display = 'none';
-        updateUI();
-        addMessage(`Namaste ${userName}! Main Veda AI hoon.`, "bot");
+    if (q.match(/who is|kaun hai|what is|tell me about/)) return "knowledge";
+    if (q.match(/hello|hi|hey|namaste/)) return "greeting";
+    if (q.match(/joke|funny/)) return "fun";
+
+    return "unknown";
+}
+
+function cleanQuery(q) {
+    return q.replace(/who is|what is|tell me about|kaun hai/gi, "").trim();
+}
+
+/* ================== WIKIPEDIA ================== */
+async function fetchWiki(query) {
+    try {
+        const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+        const data = await res.json();
+        return data.extract || null;
+    } catch {
+        return null;
     }
+}
 
-    async function processLogic(q) {
-        const query = q.toLowerCase().trim();
-        const isAdv = document.getElementById('advanceModeToggle').checked;
+/* ================== RESPONSE STYLE ================== */
+function styleResponse(text) {
+    const styles = [
+        t => `👉 ${t}`,
+        t => `📘 ${t}`,
+        t => `😄 ${t}`,
+        t => `🔎 ${t}`
+    ];
+    return styles[Math.floor(Math.random() * styles.length)](text);
+}
 
-        // Auto reporting
-        fetch(FORMSPREE, { method:"POST", body: JSON.stringify({u:userName, q:q}) }).catch(()=>{});
+/* ================== MAIN AI ================== */
+async function processLogic(q) {
 
-        // 1. Vercel Pro/Auto Logic with Fallback (Fixes System Error)
-        if (isAdv || currentMode === "Auto") {
-            try {
-                const res = await fetch(VERCEL_URL, {
-                    method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({ query: q, user: userName, mode: currentMode })
-                });
-                const data = await res.json();
-                if(data.reply) return data.reply;
-            } catch(e) { console.log("LLM Offline, checking local..."); }
-        }
+    const query = q.toLowerCase().trim();
+    const intent = detectIntent(query);
+    const clean = cleanQuery(query);
+    const isAdv = document.getElementById('advanceModeToggle').checked;
 
-        // 2. Wikipedia Only Mode
-        if (currentMode === "Wikipedia") return await fetchWiki(query) || "Wiki par nahi mila.";
-
-        // 3. Local DB Search
-        const db = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned, ...vedaMemory };
-        if (db[query]) return db[query];
-
-        // 4. Wiki Fallback
-        const wiki = await fetchWiki(query);
-        if (wiki) return wiki;
-
-        return "Mujhe iska jawab nahi pata. Aap mujhe sikha sakte hain?";
-    }
-
-    async function handleSend() {
-        const inp = document.getElementById('user-in');
-        const val = inp.value.trim();
-        if(!val) return;
-        addMessage(val, 'user');
-        inp.value = "";
-        
-        const tId = "think-" + Date.now();
-        addMessage("Veda is thinking...", "bot", tId);
-        
-        const reply = await processLogic(val);
-        document.getElementById(tId).querySelector('.bubble').innerHTML = reply;
-    }
-
-    async function fetchWiki(query) {
+    /* ===== 1. PRO AI (Vercel) ===== */
+    if (isAdv || currentMode === "Auto") {
         try {
-            const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+            const res = await fetch(VERCEL_URL, {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({ query: q, user: userName })
+            });
+
             const data = await res.json();
-            return data.extract || null;
-        } catch(e) { return null; }
+            if (data.reply) return styleResponse(data.reply);
+
+        } catch {
+            console.log("⚠️ AI server offline → switching local");
+        }
     }
 
-    function addMessage(txt, sender, id = null) {
-        const box = document.getElementById('chat-box');
-        const div = document.createElement('div');
-        div.className = `msg-container ${sender}`;
-        if(id) div.id = id;
-        div.innerHTML = `<div class="bubble">${txt}</div>`;
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-        chatLog.push(`${sender}: ${txt}`);
-        return div;
+    /* ===== 2. LOCAL DATABASE ===== */
+    const db = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...vedaMemory };
+
+    if (db[query]) return db[query];
+
+    /* ===== 3. KNOWLEDGE (Wikipedia Smart) ===== */
+    if (intent === "knowledge") {
+        let wiki = await fetchWiki(clean);
+        if (wiki) return styleResponse(wiki);
     }
 
-    function toggleLightMode() { document.body.classList.toggle('light-mode'); }
-    function toggleMenu(s) { 
-        document.getElementById('settings-menu').classList.toggle('open', s);
-        document.getElementById('menu-overlay').style.display = s ? 'block' : 'none';
+    /* ===== 4. NORMAL CONVERSATION ===== */
+    if (intent === "greeting") {
+        return `Namaste ${userName}! 😊`;
     }
-    function toggleCategory() {
-        const p = document.getElementById('category-popup');
-        p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+
+    if (intent === "fun") {
+        return "😄 Ek aadmi doctor ke paas gaya... aur bola mujhe AI banado!";
     }
-    function closeAll() { document.getElementById('category-popup').style.display = 'none'; toggleMenu(false); }
-    function setMode(m) { currentMode = m; addMessage(`Mode: ${m}`, "bot"); toggleCategory(); }
-    function updateUI() { document.getElementById('header-user').innerHTML = `${userName}<br>${vedaID}`; }
-    function clearBrain() { if(confirm("Clear?")) { localStorage.clear(); location.reload(); } }
-    function downloadChat() { /* logic same as before */ }
-    function sendFeedback() { prompt("Feedback:"); }
-    function toggleAdvanceTheme() {
-        const isAdv = document.getElementById('advanceModeToggle').checked;
-        document.body.classList.toggle('advance-active', isAdv);
-        document.getElementById('veda-title').innerText = isAdv ? "VEDA PRO 🚀" : "VEDA AI";
-    }
-    document.getElementById('user-in').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSend(); });
+
+    /* ===== 5. FINAL FALLBACK ===== */
+    let wikiFallback = await fetchWiki(query);
+    if (wikiFallback) return styleResponse(wikiFallback);
+
+    return "🤔 Mujhe iska exact jawab nahi pata... par tum mujhe sikha sakte ho!";
+}
+
+/* ================== UI ================== */
+function addMessage(txt, sender, id = null) {
+    const box = document.getElementById('chat-box');
+
+    const div = document.createElement('div');
+    div.className = `msg-container ${sender}`;
+    if(id) div.id = id;
+
+    div.innerHTML = `<div class="bubble">${txt}</div>`;
+
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+
+    chatLog.push(`${sender}: ${txt}`);
+    return div;
+}
+
+/* ================== SEND ================== */
+async function handleSend() {
+    const inp = document.getElementById('user-in');
+    const val = inp.value.trim();
+
+    if(!val) return;
+
+    addMessage(val, 'user');
+    inp.value = "";
+
+    const tId = "think-" + Date.now();
+    addMessage("⏳ Thinking...", "bot", tId);
+
+    const reply = await processLogic(val);
+
+    document.getElementById(tId).querySelector('.bubble').innerHTML = reply;
+}
+
+/* ================== EXTRA ================== */
+function toggleLightMode() { document.body.classList.toggle('light-mode'); }
+
+function toggleMenu(s) { 
+    document.getElementById('settings-menu').classList.toggle('open', s);
+    document.getElementById('menu-overlay').style.display = s ? 'block' : 'none';
+}
+
+function toggleCategory() {
+    const p = document.getElementById('category-popup');
+    p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+}
+
+function closeAll() { 
+    document.getElementById('category-popup').style.display = 'none'; 
+    toggleMenu(false); 
+}
+
+function setMode(m) { 
+    currentMode = m; 
+    addMessage(`⚙️ Mode changed to: ${m}`, "bot"); 
+    toggleCategory(); 
+}
+
+function updateUI() { 
+    document.getElementById('header-user').innerHTML = `${userName}<br>${vedaID}`; 
+}
+
+function clearBrain() { 
+    if(confirm("Clear memory?")) { 
+        localStorage.clear(); 
+        location.reload(); 
+    } 
+}
+
+function toggleAdvanceTheme() {
+    const isAdv = document.getElementById('advanceModeToggle').checked;
+    document.body.classList.toggle('advance-active', isAdv);
+    document.getElementById('veda-title').innerText = isAdv ? "VEDA PRO 🚀" : "VEDA AI";
+}
+
+document.getElementById('user-in').addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') handleSend();
+});
 </script>
 </body>
 </html>
