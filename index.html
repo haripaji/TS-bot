@@ -139,37 +139,54 @@
     }
 
     async function processLogic(q) {
-        const query = q.toLowerCase().trim();
-        const isAdv = document.getElementById('advanceModeToggle').checked;
+    const query = q.toLowerCase().trim();
+    const isAdv = document.getElementById('advanceModeToggle').checked;
 
-        // 1. Wikipedia Logic with Images
-        if (currentMode === "Wikipedia" || query.startsWith("who is") || query.startsWith("what is")) {
-            const wikiData = await fetchWiki(query.replace("who is ", "").replace("what is ", ""));
-            if (wikiData) {
-                let html = wikiData.img ? `<img src="${wikiData.img}" class="wiki-img">` : "";
-                return html + wikiData.text;
-            }
+    // 1. Identity Check (Bot ki apni pehchan)
+    if (query.includes("owner") || query.includes("kisne banaya") || query.includes("developer")) {
+        return "Mujhe **Thoughts Sounds** ne banaya hai. Main Veda AI hoon.";
+    }
+    if (query === "hello" || query === "hi") {
+        return "Namaste! Main Veda AI hoon. Main aapki kya madad kar sakta hoon?";
+    }
+
+    // 2. Local Database Check (Instant response)
+    const localDB = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaabout, ...window.vedaAnime, ...window.vedaresponses, ...vedaMemory };
+    if (localDB[query]) return localDB[query];
+
+    // 3. Wikipedia Logic (With Image Support)
+    // Sirf tabhi search karein jab word bada ho (e.g., "India", "Science")
+    if (query.length > 2) {
+        const wikiData = await fetchWiki(query);
+        if (wikiData) {
+            let imgTag = wikiData.img ? `<img src="${wikiData.img}" class="wiki-img">` : "";
+            return imgTag + wikiData.text;
         }
+    }
 
-        // 2. Pro Mode (LLM)
-        if (isAdv) {
-            try {
-                const res = await fetch(VERCEL_URL, {
-                    method: "POST",
-                    headers: {"Content-Type":"application/json"},
-                    body: JSON.stringify({ query: q, user: userName, history: chatHistory.slice(-5) })
-                });
+    // 4. Vercel LLM (Pro Mode) - Catching Errors Properly
+    if (isAdv) {
+        try {
+            const res = await fetch(VERCEL_URL, {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({ query: q, user: userName, history: chatHistory.slice(-3) })
+            });
+            if (res.ok) {
                 const data = await res.json();
                 return data.reply;
-            } catch(e) { return "I'm having trouble connecting to my brain server. Let's try Local Mode."; }
+            }
+        } catch(e) {
+            console.log("Server Offline:", e);
+            // Agar server offline hai, to error message na dikhayein balki learning mode trigger karein
         }
-
-        // 3. Local Knowledge & Learning
-        const localDB = { ...window.vedaCore, ...vedaMemory };
-        if (localDB[query]) return localDB[query];
-
-        return "I'm still learning about that. Can you explain what you mean? (I'll remember it for next time)";
     }
+
+    // 5. Learning Mode Fallback (Agar kahin answer nahi mila)
+    learningMode.active = true;
+    learningMode.question = query;
+    return `Mujhe iska jawab nahi pata. Kya aap mujhe sikha sakte hain ki "${q}" ka kya matlab hai?`;
+}
 
     async function fetchWiki(query) {
         try {
