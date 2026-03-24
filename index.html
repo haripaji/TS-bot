@@ -13,119 +13,108 @@
     <script src="study.js"></script>
 
 
+    
     <style>
         :root { 
-            --primary: #10a37f; --bg: #343541; --sidebar: #202123; 
-            --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #444654; 
+            --primary: #10a37f; --bg: #202123; --sidebar: #2c2d30; 
+            --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #343541; 
         }
-        * { box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
         body { height: 100dvh; background: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; }
 
+        /* Sidebar Overlay */
+        #sidebar { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: var(--sidebar); z-index: 2000; transition: 0.3s; padding: 20px; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+        #sidebar.open { left: 0; }
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; }
+
         /* Header */
-        header { height: 55px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; justify-content: space-between; background: var(--bg); flex-shrink: 0; }
-        .logo { font-weight: bold; color: var(--primary); font-size: 1.2rem; letter-spacing: 1px; }
+        header { height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; justify-content: space-between; background: var(--bg); z-index: 100; }
+        .menu-icon { font-size: 24px; cursor: pointer; color: var(--text); }
+        .logo { font-weight: bold; color: var(--primary); font-size: 1.2rem; }
 
-        /* Chat Area */
-        #chat-box { flex: 1; overflow-y: auto; padding-bottom: 20px; display: flex; flex-direction: column; scroll-behavior: smooth; }
-        .row { width: 100%; padding: 25px 15px; display: flex; gap: 15px; border-bottom: 1px solid rgba(0,0,0,0.1); animation: fadeIn 0.3s ease; }
-        .row.user { background: var(--bg); }
+        /* Chat Window */
+        #chat-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .row { width: 100%; padding: 20px 15px; display: flex; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .row.bot { background: var(--card); }
-        
-        .avatar { width: 32px; height: 32px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
-        .user .avatar { background: #5436da; color: white; }
-        .bot .avatar { background: var(--primary); color: white; }
+        .avatar { width: 30px; height: 30px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; }
+        .user .avatar { background: #5436da; }
+        .bot .avatar { background: var(--primary); }
 
-        .content { flex: 1; font-size: 16px; line-height: 1.6; word-wrap: break-word; overflow: hidden; }
-        
         /* Action Buttons */
-        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; opacity: 0.7; }
-        .act-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: 0.2s; }
-        .act-btn:active { background: var(--primary); border-color: var(--primary); }
+        .actions { display: flex; gap: 10px; margin-top: 10px; opacity: 0.6; }
+        .act-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
 
-        /* Footer Input */
-        .footer { padding: 10px 15px 35px; background: linear-gradient(180deg, transparent, var(--bg) 80%); }
-        .input-wrapper { max-width: 800px; margin: 0 auto; background: #40414f; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: flex-end; padding: 10px 15px; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
-        
-        textarea { flex: 1; background: none; border: none; color: white; outline: none; font-size: 16px; resize: none; max-height: 150px; min-height: 24px; padding: 0; line-height: 24px; }
-        .send-btn { background: var(--primary); color: white; border: none; border-radius: 6px; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 10px; flex-shrink: 0; }
+        /* Floating Mode Menu */
+        #mode-popup { display: none; position: fixed; bottom: 85px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 12px; padding: 10px; width: 200px; z-index: 1500; }
+        .mode-item { padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; margin-bottom: 5px; }
+        .mode-item:hover { background: var(--primary); }
 
-        /* Media Displays */
-        .ai-image { width: 100%; max-width: 400px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Footer */
+        .footer { padding: 10px 15px 25px; background: var(--bg); }
+        .input-box { max-width: 800px; margin: 0 auto; background: #40414f; border-radius: 12px; display: flex; align-items: flex-end; padding: 10px; border: 1px solid var(--border); }
+        textarea { flex: 1; background: none; border: none; color: white; outline: none; font-size: 16px; resize: none; max-height: 120px; padding: 5px; }
+        .btn-ui { background: none; border: none; color: #8e8ea0; font-size: 22px; cursor: pointer; padding: 5px; }
+
+        .ai-img { width: 100%; border-radius: 10px; margin-top: 10px; border: 1px solid var(--border); }
     </style>
 </head>
 <body>
 
+<div id="overlay" onclick="toggleSidebar(false)"></div>
+
+<div id="sidebar">
+    <h2 style="color:var(--primary); margin-bottom:20px;">Veda Settings</h2>
+    <div class="mode-item" onclick="location.reload()">🔄 Reset Chat</div>
+    <div class="mode-item" onclick="alert('Exporting data...')">🚀 Export Response</div>
+    <div class="mode-item" onclick="toggleSidebar(false)">✖ Close Menu</div>
+    <div style="position: absolute; bottom: 20px; font-size: 12px; opacity: 0.5;">Created by Thoughts Sounds</div>
+</div>
+
 <header>
-    <div class="logo">VEDA PRO 🚀</div>
-    <div style="font-size: 10px; opacity: 0.5; text-align: right;">Thoughts Sounds<br>Build v4.0</div>
+    <div class="menu-icon" onclick="toggleSidebar(true)">☰</div>
+    <div class="logo">VEDA AI PRO</div>
+    <div style="font-size: 10px; opacity: 0.5;">ID: V-6413</div>
 </header>
 
 <div id="chat-box">
     <div class="row bot">
         <div class="avatar">V</div>
-        <div class="content">
-            Namaste! Main Veda AI Pro hoon. Main Text, Wikipedia Research aur AI Images generate kar sakta hoon. <br><br>
-            <b>Try:</b> "Generate image of a space robot"
-        </div>
+        <div class="content">Namaste! Main Veda AI hoon. ➕ par click karke modes badlein ya "Generate image" boleinh.</div>
     </div>
 </div>
 
+<div id="mode-popup">
+    <div class="mode-item" onclick="setMode('Auto')">✨ Auto Mode</div>
+    <div class="mode-item" onclick="setMode('Wiki')">🌐 Wikipedia</div>
+    <div class="mode-item" onclick="setMode('Image')">🎨 AI Image</div>
+</div>
+
 <div class="footer">
-    <div class="input-wrapper">
-        <textarea id="user-in" placeholder="Ask Veda anything..." rows="1" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" onclick="handleSend()">⬆</button>
+    <div class="input-box">
+        <button class="btn-ui" onclick="toggleModes()">➕</button>
+        <textarea id="user-in" placeholder="Ask anything..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <button class="btn-ui" style="color:var(--primary)" onclick="handleSend()">⬆</button>
     </div>
 </div>
 
 <script>
-    // --- Configuration ---
-    const VERCEL_API = "https://veda-brain-q1ju.vercel.app/ask";
+    let currentMode = "Auto";
 
-    // --- Core Logic ---
-    async function getAIResponse(query) {
-        const q = query.toLowerCase().trim();
-
-        // 1. Identity & Basic Answers
-        if(q.includes("owner") || q.includes("developer") || q.includes("kisne banaya")) {
-            return "Mujhe **Thoughts Sounds** ne design aur develop kiya hai.";
-        }
-        if(q === "hi" || q === "hello") return "Hello! Main aapki kaise madad kar sakta hoon?";
-
-        // 2. AI Image Generation (DALL-E Style)
-        if (q.includes("image") || q.includes("photo") || q.includes("generate") || q.includes("dikhao")) {
-            const prompt = q.replace(/generate|image|of|photo|dikhao|make|create/g, "").trim();
-            if(prompt.length > 2) {
-                const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random()*1000)}`;
-                return `Ye rahi aapki AI generated image: <br><img src="${imgUrl}" class="ai-image" alt="${prompt}">`;
-            }
-        }
-
-        // 3. Wikipedia Search (Knowledge)
-        const wiki = await fetchWiki(q);
-        if(wiki) return (wiki.img ? `<img src="${wiki.img}" class="ai-image" style="max-width:200px;"><br>` : "") + wiki.text;
-
-        // 4. Fallback (Learning / Thinking)
-        return "Main abhi iske baare mein seekh raha hoon. Kya aap mujhe thoda aur samjha sakte hain?";
+    function toggleSidebar(s) {
+        document.getElementById('sidebar').classList.toggle('open', s);
+        document.getElementById('overlay').style.display = s ? 'block' : 'none';
     }
 
-    async function fetchWiki(query) {
-        try {
-            const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-            const data = await res.json();
-            if (data.extract && query.length > 2) {
-                return { text: data.extract, img: data.thumbnail ? data.thumbnail.source : null };
-            }
-            return null;
-        } catch(e) { return null; }
+    function toggleModes() {
+        const p = document.getElementById('mode-popup');
+        p.style.display = (p.style.display === 'block') ? 'none' : 'block';
     }
 
-    // --- UI Handlers ---
-    function autoResize(el) {
-        el.style.height = 'auto';
-        el.style.height = el.scrollHeight + 'px';
+    function setMode(m) {
+        currentMode = m;
+        toggleModes();
+        addMsg(`Mode switched to: **${m}**`, 'bot');
     }
 
     async function handleSend() {
@@ -133,70 +122,68 @@
         const val = inp.value.trim();
         if(!val) return;
 
-        addMessage(val, 'user');
+        addMsg(val, 'user');
         inp.value = "";
         inp.style.height = 'auto';
-        
-        const botId = "bot-" + Date.now();
-        addMessage("Thinking...", 'bot', botId);
-        
-        const response = await getAIResponse(val);
-        updateMessage(botId, response);
+
+        const id = "bot-" + Date.now();
+        addMsg("Thinking...", "bot", id);
+
+        const reply = await getAI(val);
+        document.getElementById(id).querySelector('.txt').innerHTML = reply;
     }
 
-    function addMessage(text, role, id = null) {
+    async function getAI(q) {
+        const query = q.toLowerCase();
+        
+        // Image Generation
+        if(query.includes("image") || currentMode === "Image") {
+            const prompt = query.replace("image", "").replace("generate", "").trim();
+            const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt || "abstract art")}?width=800&height=800&nologo=true`;
+            return `Result: <br><img src="${url}" class="ai-img">`;
+        }
+
+        // Wiki Search
+        try {
+            const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+            const data = await res.json();
+            if(data.extract) return (data.thumbnail ? `<img src="${data.thumbnail.source}" style="width:150px; border-radius:8px;"><br>` : "") + data.extract;
+        } catch(e) {}
+
+        return "Mujhe iska jawab nahi pata, par main seekh raha hoon!";
+    }
+
+    function addMsg(txt, role, id=null) {
         const box = document.getElementById('chat-box');
         const row = document.createElement('div');
         row.className = `row ${role}`;
         if(id) row.id = id;
-
         row.innerHTML = `
             <div class="avatar">${role === 'user' ? 'U' : 'V'}</div>
             <div class="content">
-                <div class="text-body">${text}</div>
-                ${role === 'bot' ? `
-                <div class="actions">
+                <div class="txt">${txt}</div>
+                ${role === 'bot' ? `<div class="actions">
                     <button class="act-btn" onclick="speak('${id}')">🔊 Speak</button>
                     <button class="act-btn" onclick="copy('${id}')">📋 Copy</button>
-                    <button class="act-btn" onclick="this.innerText='👍 Done'">👍</button>
-                    <button class="act-btn" onclick="this.innerText='👎 Done'">👎</button>
                 </div>` : ''}
-            </div>
-        `;
+            </div>`;
         box.appendChild(row);
         box.scrollTop = box.scrollHeight;
     }
 
-    function updateMessage(id, text) {
-        const el = document.getElementById(id).querySelector('.text-body');
-        el.innerHTML = text;
-        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-    }
-
-    // --- Features ---
     function speak(id) {
-        const text = document.getElementById(id).querySelector('.text-body').innerText;
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'hi-IN';
-        window.speechSynthesis.speak(utter);
+        const t = document.getElementById(id).querySelector('.txt').innerText;
+        const u = new SpeechSynthesisUtterance(t);
+        u.lang = 'hi-IN';
+        window.speechSynthesis.speak(u);
     }
 
     function copy(id) {
-        const text = document.getElementById(id).querySelector('.text-body').innerText;
-        navigator.clipboard.writeText(text);
-        alert("Text copied!");
+        const t = document.getElementById(id).querySelector('.txt').innerText;
+        navigator.clipboard.writeText(t);
+        alert("Copied!");
     }
-
-    // Mobile Key Handling
-    document.getElementById('user-in').addEventListener('keydown', (e) => {
-        if(e.key === 'Enter' && !e.shiftKey && window.innerWidth > 768) {
-            e.preventDefault();
-            handleSend();
-        }
-    });
 </script>
 </body>
 </html>
 
-    
