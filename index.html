@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI </title>
+    <title>Veda AI Pro</title>
     
     <script src="core.js"></script>
     <script src="study.js"></script>
@@ -165,7 +165,7 @@
             const tId = "think-" + Date.now();
             const thinkBox = addMessage("🧠 Deep Thinking...", "bot", tId);
             const reply = await processLogic(val);
-            document.getElementById(tId).innerHTML = `<div class="bubble">${reply}</div>`; // Replace thinking text
+            document.getElementById(tId).innerHTML = `<div class="bubble">${reply}</div>`; 
         } else {
             const reply = await processLogic(val);
             addMessage(reply, 'bot');
@@ -176,75 +176,68 @@
         const query = q.toLowerCase().trim();
         const isAdv = document.getElementById('advanceModeToggle').checked;
 
+        // 1. Learning State (Updated with Refusal & Duplicate Check)
         if (learningMode.active) {
+            const lowerInput = q.toLowerCase().trim();
+            
+            // --- Refusal Recognition ---
+            const manaKarneWaleShabd = [
+                "nahin", "nahi", "no", "main nahin sikha sakta", "tum khud sikh lo", 
+                "main kiyon sikaon", "bhag idar se", "bhag yahan se", "nikal", 
+                "pata nahi", "bc", "papa bol", "mc", "apne baap ko bol", "mujhse mat pucho", "kyun bataun", "pagal ho kya"
+            ];
+
+            if (manaKarneWaleShabd.some(word => lowerInput.includes(word))) {
+                learningMode.active = false;
+                return "Theek hai, koi baat nahi! Main khud seekhne ki koshish karunga. 😊";
+            }
+
+            // --- Duplicate Check ---
+            const allLocalData = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned };
+            const alreadyExists = Object.values(allLocalData).some(val => 
+                val && val.toString().toLowerCase() === lowerInput
+            );
+
+            if (alreadyExists) {
+                learningMode.active = false;
+                return "Dhanyawad! Lekin ye toh mujhe pehle se hi pata hai. ✨";
+            }
+
+            // --- Save Logic ---
             vedaMemory[learningMode.question] = q;
             localStorage.setItem('vedaMemory', JSON.stringify(vedaMemory));
             learningMode.active = false;
-            return "Dhanyawad! Maine ise yaad kar liya hai. 😊";
+            return "Dhanyawad! Maine ise naye database mein save kar liya hai. 😊";
         }
 
-        // 1. Wikipedia Only Mode
+        // 2. Wikipedia Only Mode
         if (currentMode === "Wikipedia") {
             return await fetchWiki(query) || "Wikipedia par iska koi page nahi mila.";
         }
 
-        // 2. Math Solver
+        // 3. Math Solver
         if (/^[\d+\-*/().\s^]+$/.test(query) && /[0-9]/.test(query)) {
             try { return `🧮 Calculation: ${eval(query)}`; } catch(e) {}
         }
 
-        // 3. Local Database Search (Core + Study + Anime + Learned)
+        // 4. Local Database Search (Core + Study + Anime + Learned)
         const db = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned, ...vedaMemory };
         if (db[query]) {
-            return (isAdv ? " " : "") + db[query];
+            return (isAdv ? "⚡ " : "") + db[query];
         }
 
-        // 4. Auto-Wikipedia (Internet Search)
+        // 5. Auto-Wikipedia (Internet Search)
         if (isAdv || currentMode === "Auto") {
             const wiki = await fetchWiki(query);
             if (wiki) return wiki;
         }
 
-        // 5. Learning Fallback
+        // 6. Learning Fallback
         learningMode.active = true;
         learningMode.question = query;
-        return `Mujhe iska jawab nahi pata. Kya aap mujhe sikha sakte hain? <br><br> <button onclick="window.open('https://google.com/search?q=${query}')" class="menu-btn" style="width:auto; display:inline-block; border:1px solid var(--primary);">Search Google</button>`;
-    
-    // 1. Learning State (Updated with Refusal & Duplicate Check)
-    if (learningMode.active) {
-        const lowerInput = q.toLowerCase().trim();
-        
-        // --- NAYA: Refusal Recognition (Mana karne par stop karega) ---
-        const manaKarneWaleShabd = [
-            "nahin", "nahi", "no", "main nahin sikha sakta", "tum khud sikh lo", 
-            "main kiyon sikaon", "bhag idar se", "bhag yahan se", "nikal", 
-            "pata nahi", " bc", "papa bol", " mc", "apne baap ko bol", "mujhse mat pucho", "kyun bataun", "pagal ho kya"
-        ];
-
-        if (manaKarneWaleShabd.some(word => lowerInput.includes(word))) {
-            learningMode.active = false;
-            return "Theek hai, koi baat nahi! Main khud seekhne ki koshish karunga. 😊";
-        }
-
-        // --- NAYA: Duplicate Check (Agar data pehle se hai toh save nahi karega) ---
-        const allLocalData = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned };
-        const alreadyExists = Object.values(allLocalData).some(val => 
-            val.toString().toLowerCase() === lowerInput
-        );
-
-        if (alreadyExists) {
-            learningMode.active = false;
-            return "Dhanyawad! Lekin ye toh mujhe pehle se hi pata hai. ✨";
-        }
-
-        // --- Purana Save Logic ---
-        vedaMemory[learningMode.question] = q;
-        localStorage.setItem('vedaMemory', JSON.stringify(vedaMemory));
-        learningMode.active = false;
-        return "Dhanyawad! Maine ise naye database mein save kar liya hai. 😊";
+        return `Mujhe iska jawab nahi pata. Kya aap mujhe sikha sakte hain? <br><br> <button onclick="window.open('https://google.com/search?q=${encodeURIComponent(query)}')", class="menu-btn" style="width:auto; display:inline-block; border:1px solid var(--primary);">Search Google 🔍</button>`;
     }
 
-    
     async function fetchWiki(query) {
         try {
             const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
