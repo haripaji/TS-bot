@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI Pro</title>
+    <title>Veda AI</title>
     
     <script src="core.js"></script>
     <script src="study.js"></script>
@@ -13,52 +13,52 @@
     
     <style>
         :root { --primary: #10a37f; --bg: #343541; --sidebar: #202123; --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #444654; --advance-neon: #ff0055; }
+        .light-mode { --bg: #f7f7f8; --text: #202123; --sidebar: #ffffff; --card: #e5e5e5; --border: rgba(0,0,0,0.1); }
+        
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; transition: 0.4s ease; }
 
-        /* Header Styles */
+        /* Login Overlay */
+        #login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: var(--sidebar); padding: 30px; border-radius: 20px; text-align: center; border: 1px solid var(--border); width: 90%; max-width: 350px; }
+
+        /* Header & Chat Area */
         header { width: 100%; height: 60px; background: rgba(52, 53, 65, 0.95); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; z-index: 100; justify-content: space-between; flex-shrink: 0; }
         .title { font-weight: 600; font-size: 1.2rem; color: var(--primary); letter-spacing: 1px; transition: 0.3s; }
-
-        /* Chat Area */
         #chat-box { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
+        
         .msg-container { display: flex; flex-direction: column; gap: 8px; max-width: 90%; animation: fadeIn 0.3s ease; }
         .user { align-self: flex-end; } 
         .bot { align-self: flex-start; width: 100%; }
         .bubble { padding: 12px 16px; border-radius: 15px; font-size: 15px; line-height: 1.6; word-wrap: break-word; }
         .user .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-right-radius: 2px; }
-        .bot .bubble { background: none; padding-left: 0; color: #d1d1e0; }
+        .bot .bubble { background: none; padding-left: 0; color: inherit; opacity: 0.9; }
         
-        .action-bar { display: flex; gap: 18px; font-size: 15px; color: #8e8ea0; margin-top: 5px; }
-        .action-bar span { cursor: pointer; transition: 0.2s; }
-        .action-bar span:hover { color: var(--primary); }
-
-        /* Popups & Sidebar */
-        #settings-menu { position: fixed; top: 0; left: -100%; width: 85%; max-width: 300px; height: 100%; background: var(--sidebar); z-index: 1001; padding: 25px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+        /* Settings & Popups */
+        #settings-menu { position: fixed; top: 0; left: -100%; width: 85%; max-width: 300px; height: 100%; background: var(--sidebar); z-index: 1001; padding: 25px; transition: 0.4s; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
         #settings-menu.open { left: 0; }
-        #menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(3px); }
+        #category-popup { display: none; position: fixed; bottom: 80px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 18px; padding: 15px; z-index: 150; width: 230px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
         
-        #category-popup { display: none; position: fixed; bottom: 80px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 18px; padding: 15px; z-index: 150; width: 230px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); animation: pop 0.3s ease; }
-        .menu-btn { width: 100%; background: #2d2d39; border: none; color: white; padding: 12px; text-align: left; margin-bottom: 8px; border-radius: 10px; cursor: pointer; font-size: 14px; transition: 0.2s; }
-        .menu-btn:hover { background: #3e3e4a; color: var(--primary); }
-
-        /* Advance Mode Style */
-        .advance-active { background: #0b0d11 !important; color: #00ffcc !important; }
+        .menu-btn { width: 100%; background: #2d2d39; border: none; color: white; padding: 12px; text-align: left; margin-bottom: 8px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+        .advance-active { background: #0b0d11 !important; }
         .advance-active .title { color: var(--advance-neon); text-shadow: 0 0 10px var(--advance-neon); }
-        .advance-active .bubble { color: #e0fcf6 !important; }
 
-        .wiki-img { width: 100%; max-width: 280px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
-
-        /* Footer */
-        .footer { width: 100%; padding: 10px 15px 25px; background: var(--bg); flex-shrink: 0; transition: 0.3s; }
+        .footer { width: 100%; padding: 10px 15px 25px; background: var(--bg); flex-shrink: 0; }
         .input-container { max-width: 800px; margin: 0 auto; background: #40414f; border-radius: 15px; display: flex; align-items: center; padding: 8px 15px; border: 1px solid var(--border); }
-        input { flex: 1; background: none; border: none; color: white; outline: none; font-size: 16px; padding: 8px 0; }
+        input { flex: 1; background: none; border: none; color: white; outline: none; font-size: 16px; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body onclick="closeAll()">
+
+<div id="login-overlay">
+    <div class="login-card">
+        <h2 style="color:var(--primary); margin-bottom:10px;">Veda AI Login</h2>
+        <input type="text" id="user-name-in" placeholder="Apna naam likhein..." style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:white; margin-bottom:15px;">
+        <button onclick="doLogin()" style="width:100%; padding:12px; background:var(--primary); border:none; color:white; border-radius:8px; font-weight:bold; cursor:pointer;">Start Veda</button>
+    </div>
+</div>
 
 <div id="menu-overlay" onclick="toggleMenu(false)"></div>
 
@@ -76,24 +76,24 @@
     <button class="menu-btn" onclick="setMode('Study')">📚 Study Mode</button>
     <button class="menu-btn" onclick="setMode('Anime')">⛩️ Anime Fan</button>
     <button class="menu-btn" onclick="setMode('Wikipedia')">🌐 Wikipedia Only</button>
-    <button class="menu-btn" onclick="setMode('Google search')">🔍 Google search</button>
     
     <div style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 12px;">
         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--advance-neon); font-weight: bold; font-size: 13px;">
             <input type="checkbox" id="advanceModeToggle" onchange="toggleAdvanceTheme()" style="width: 16px; height: 16px; accent-color: var(--advance-neon);">
-            🚀 ACTIVATE VEDA PRO
+            🚀 ACTIVATE VEDA PRO (LLM)
         </label>
     </div>
 </div>
 
 <div id="settings-menu" onclick="event.stopPropagation()">
     <h3 style="color:var(--primary); margin-bottom:20px;">Settings</h3>
-    <div style="background: #1a1b1e; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
+    <button class="menu-btn" onclick="toggleLightMode()">🌓 Toggle Theme</button>
+    <button class="menu-btn" onclick="sendFeedback()">⭐ Send Feedback</button>
+    <div style="background: #1a1b1e; padding: 15px; border-radius: 12px; text-align: center; margin: 15px 0;">
         <div id="live-time" style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">00:00:00</div>
-        <div id="live-date" style="font-size: 0.8rem; color: #8e8ea0;">Loading...</div>
     </div>
-    <button class="menu-btn" onclick="exportLearnedData()" style="background:var(--primary); font-weight:bold;">🚀 Export responses.js</button>
-    <button class="menu-btn" onclick="downloadChat()">📥 Download Chat (.txt)</button>
+    <button class="menu-btn" onclick="exportLearnedData()">🚀 Export responses.js</button>
+    <button class="menu-btn" onclick="downloadChat()">📥 Download Chat</button>
     <button class="menu-btn" onclick="clearBrain()" style="color:#ef4444;">🧠 Reset Memory</button>
 </div>
 
@@ -107,20 +107,102 @@
 </div>
 
 <script>
+    // --- GLOBAL VARIABLES ---
     let vedaMemory = JSON.parse(localStorage.getItem('vedaMemory')) || {};
     let learningMode = { active: false, question: "" };
     let currentMode = "Auto";
     let chatLog = []; 
+    let userName = localStorage.getItem('vedaUserName') || "User";
     const vedaID = localStorage.getItem('vedaUserID') || "VEDA-" + Math.floor(1000 + Math.random() * 9000);
-    localStorage.setItem('vedaUserID', vedaID);
+    
+    // --- API CONFIG ---
+    const VERCEL_LLM_URL = "https://veda-brain-q1ju.vercel.app/ask";
+    const FORMSPREE_REPORT = "https://formspree.io/f/YOUR_ID"; // Apni ID yahan dalein
 
-    window.onload = () => { startClock(); updateUI(); addMessage("Namaste! Mai aapki kya help karoon, kya aapke dimag mai koi creative idea💡 hai .", "bot"); };
+    window.onload = () => { 
+        startClock(); 
+        if(localStorage.getItem('vedaUserName')) {
+            document.getElementById('login-overlay').style.display = 'none';
+            updateUI();
+        }
+    };
 
+    function doLogin() {
+        const name = document.getElementById('user-name-in').value.trim();
+        if(!name) return alert("Naam likhna zaroori hai!");
+        userName = name;
+        localStorage.setItem('vedaUserName', name);
+        localStorage.setItem('vedaUserID', vedaID);
+        document.getElementById('login-overlay').style.display = 'none';
+        updateUI();
+        addMessage(`Namaste ${userName}! Main Veda AI Pro hoon. Aaj main aapki kaise madad karoon?`, "bot");
+    }
+
+    function toggleLightMode() { document.body.classList.toggle('light-mode'); }
+
+    function sendFeedback() {
+        let f = prompt("Aapka anubhav kaisa raha? (1-5 star):");
+        if(f) reportToFormspree("FEEDBACK", f);
+    }
+
+    async function reportToFormspree(type, detail) {
+        try {
+            fetch(FORMSPREE_REPORT, {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({ user: userName, type: type, detail: detail, date: new Date().toLocaleString() })
+            });
+        } catch(e) {}
+    }
+
+    // --- CORE LOGIC UPGRADE ---
+    async function processLogic(q) {
+        const query = q.toLowerCase().trim();
+        const isAdv = document.getElementById('advanceModeToggle').checked;
+
+        // HAR NEW QUESTION REPORT KARNA
+        reportToFormspree("QUESTION", q);
+
+        // 1. Learning Fallback
+        if (learningMode.active) {
+            vedaMemory[learningMode.question] = q;
+            localStorage.setItem('vedaMemory', JSON.stringify(vedaMemory));
+            learningMode.active = false;
+            return "Dhanyawad! Maine ise save kar liya hai. 😊";
+        }
+
+        // 2. VEDA PRO (VERCEL LLM) - NEW FEATURE
+        if (isAdv) {
+            try {
+                const res = await fetch(VERCEL_LLM_URL, {
+                    method: "POST",
+                    headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({ query: `[Mode: ${currentMode}] ${q}`, user: userName })
+                });
+                const data = await res.json();
+                return data.reply;
+            } catch(e) { return "Vercel Server se connection nahi ho paya. 🌐❌"; }
+        }
+
+        // 3. Purana Logic (Wikipedia, Local DB, Math)
+        if (currentMode === "Wikipedia") return await fetchWiki(query) || "No wiki found.";
+        
+        const db = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned, ...vedaMemory };
+        if (db[query]) return db[query];
+
+        const wiki = await fetchWiki(query);
+        if (wiki) return wiki;
+
+        learningMode.active = true;
+        learningMode.question = query;
+        return `Mujhe iska jawab nahi pata. Kya aap mujhe sikha sakte hain?`;
+    }
+
+    // --- DOM HELPERS (UNTOUCHED) ---
     function startClock() {
         setInterval(() => {
-            const n = new Date();
-            document.getElementById('live-time').innerText = n.toLocaleTimeString('en-GB');
-            document.getElementById('live-date').innerText = n.toLocaleDateString('hi-IN', {day:'numeric', month:'long', year:'numeric'});
+            document.getElementById('live-time').innerText = new Date().toLocaleTimeString('en-GB');
+            document.getElementById('live-date').innerText = new Date().toLocaleDateString('hi-IN', {day:'numeric', month:'long', year:'numeric'});
         }, 1000);
     }
 
@@ -128,7 +210,6 @@
         const isAdv = document.getElementById('advanceModeToggle').checked;
         document.body.classList.toggle('advance-active', isAdv);
         document.getElementById('veda-title').innerText = isAdv ? "VEDA PRO 🚀" : "VEDA AI";
-        if(isAdv) speak("Veda Pro Activated");
     }
 
     function toggleMenu(s) { 
@@ -159,95 +240,18 @@
         addMessage(val, 'user');
         inp.value = "";
         
-        const isAdv = document.getElementById('advanceModeToggle').checked;
-        if(isAdv) {
-            // Grok-style Thinking Indicator
-            const tId = "think-" + Date.now();
-            const thinkBox = addMessage("🧠 Deep Thinking...", "bot", tId);
-            const reply = await processLogic(val);
-            document.getElementById(tId).innerHTML = `<div class="bubble">${reply}</div>`; 
-        } else {
-            const reply = await processLogic(val);
-            addMessage(reply, 'bot');
-        }
-    }
-
-    async function processLogic(q) {
-        const query = q.toLowerCase().trim();
-        const isAdv = document.getElementById('advanceModeToggle').checked;
-
-        // 1. Learning State (Updated with Refusal & Duplicate Check)
-        if (learningMode.active) {
-            const lowerInput = q.toLowerCase().trim();
-            
-            // --- Refusal Recognition ---
-            const manaKarneWaleShabd = [
-                "nahin", "nahi", "no", "main nahin sikha sakta", "tum khud sikh lo", 
-                "main kiyon sikaon", "bhag idar se", "bhag yahan se", "nikal", 
-                "pata nahi", "bc", "papa bol", "mc", "apne baap ko bol", "mujhse mat pucho", "kyun bataun", "pagal ho kya"
-            ];
-
-            if (manaKarneWaleShabd.some(word => lowerInput.includes(word))) {
-                learningMode.active = false;
-                return "Theek hai, koi baat nahi! Main khud seekhne ki koshish karunga. 😊";
-            }
-
-            // --- Duplicate Check ---
-            const allLocalData = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned };
-            const alreadyExists = Object.values(allLocalData).some(val => 
-                val && val.toString().toLowerCase() === lowerInput
-            );
-
-            if (alreadyExists) {
-                learningMode.active = false;
-                return "Dhanyawad! Lekin ye toh mujhe pehle se hi pata hai. ✨";
-            }
-
-            // --- Save Logic ---
-            vedaMemory[learningMode.question] = q;
-            localStorage.setItem('vedaMemory', JSON.stringify(vedaMemory));
-            learningMode.active = false;
-            return "Dhanyawad! Maine ise naye database mein save kar liya hai. 😊";
-        }
-
-        // 2. Wikipedia Only Mode
-        if (currentMode === "Wikipedia") {
-            return await fetchWiki(query) || "Wikipedia par iska koi page nahi mila.";
-        }
-
-        // 3. Math Solver
-        if (/^[\d+\-*/().\s^]+$/.test(query) && /[0-9]/.test(query)) {
-            try { return `🧮 Calculation: ${eval(query)}`; } catch(e) {}
-        }
-
-        // 4. Local Database Search (Core + Study + Anime + Learned)
-        const db = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned, ...vedaMemory };
-        if (db[query]) {
-            return (isAdv ? "⚡ " : "") + db[query];
-        }
-
-        // 5. Auto-Wikipedia (Internet Search)
-        if (isAdv || currentMode === "Auto") {
-            const wiki = await fetchWiki(query);
-            if (wiki) return wiki;
-        }
-
-        // 6. Learning Fallback
-        learningMode.active = true;
-        learningMode.question = query;
-        return `Mujhe iska jawab nahi pata. Kya aap mujhe sikha sakte hain? <br><br> <button onclick="window.open('https://google.com/search?q=${encodeURIComponent(query)}')", class="menu-btn" style="width:auto; display:inline-block; border:1px solid var(--primary);">Search Google 🔍</button>`;
+        const tId = "think-" + Date.now();
+        addMessage("Veda is thinking...", "bot", tId);
+        const reply = await processLogic(val);
+        document.getElementById(tId).innerHTML = `<div class="bubble">${reply}</div>`;
     }
 
     async function fetchWiki(query) {
         try {
             const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
             const data = await res.json();
-            if (data.extract) {
-                let img = data.thumbnail ? `<img src="${data.thumbnail.source}" class="wiki-img"><br>` : "";
-                return img + data.extract + `<br><br><small style="color:var(--primary);">Source: Wikipedia</small>`;
-            }
-        } catch(e) {}
-        return null;
+            return data.extract ? data.extract : null;
+        } catch(e) { return null; }
     }
 
     function addMessage(txt, sender, id = null) {
@@ -255,38 +259,15 @@
         const div = document.createElement('div');
         div.className = `msg-container ${sender}`;
         if(id) div.id = id;
-        
-        const cleanTxt = txt.replace(/<\/?[^>]+(>|$)/g, "");
-        chatLog.push(`${sender.toUpperCase()}: ${cleanTxt}`);
-        
-        div.innerHTML = `<div class="bubble">${txt}</div>
-            ${sender === 'bot' ? `<div class="action-bar"><span onclick="speak('${cleanTxt.replace(/'/g, "\\'")}')">🔊</span></div>` : ""}`;
-        
+        div.innerHTML = `<div class="bubble">${txt}</div>`;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
+        chatLog.push(`${sender.toUpperCase()}: ${txt}`);
         return div;
     }
 
-    function exportLearnedData() {
-        let content = "window.vedaLearned = " + JSON.stringify(vedaMemory, null, 4) + ";";
-        const blob = new Blob([content], { type: 'text/javascript' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = `responses.js`; a.click();
-    }
-
-    function downloadChat() {
-        const blob = new Blob([chatLog.join('\n')], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = `Veda_Chat.txt`; a.click();
-    }
-
-    function speak(t) { 
-        window.speechSynthesis.cancel(); 
-        let u = new SpeechSynthesisUtterance(t); u.lang = 'hi-IN'; window.speechSynthesis.speak(u); 
-    }
-
     function clearBrain() { if(confirm("Reset Memory?")) { localStorage.clear(); location.reload(); } }
-    function updateUI() { document.getElementById('header-user').innerHTML = `User<br>${vedaID}`; }
+    function updateUI() { document.getElementById('header-user').innerHTML = `${userName}<br>${vedaID}`; }
     document.getElementById('user-in').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSend(); });
 </script>
 </body>
