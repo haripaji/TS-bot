@@ -5,272 +5,212 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Veda AI Pro</title>
     
-    <script src="core.js"></script>
-    <script src="study.js"></script>
-    <script src="anime.js"></script>
-    <script src="responses.js"></script> 
-    <script src="about.js"></script>
-    
     <style>
-        :root { --primary: #10a37f; --bg: #343541; --sidebar: #202123; --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #444654; --advance-neon: #ff0055; }
-        .light-mode { --bg: #f7f7f8; --text: #202123; --sidebar: #ffffff; --card: #e5e5e5; --border: rgba(0,0,0,0.1); }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; transition: 0.4s ease; }
+        :root { 
+            --primary: #10a37f; --bg: #343541; --sidebar: #202123; 
+            --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #444654; 
+            --user-bg: #40414f;
+        }
+        .light-mode { --bg: #f7f7f8; --text: #202123; --sidebar: #ffffff; --card: #e5e5e5; --border: rgba(0,0,0,0.1); --user-bg: #ffffff; }
+        
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; }
 
         /* Login Screen */
         #login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: var(--sidebar); padding: 30px; border-radius: 20px; text-align: center; border: 1px solid var(--border); width: 90%; max-width: 350px; }
+        .login-card { background: var(--sidebar); padding: 30px; border-radius: 20px; text-align: center; border: 1px solid var(--border); width: 90%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
-        header { width: 100%; height: 60px; background: rgba(52, 53, 65, 0.95); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; z-index: 100; justify-content: space-between; flex-shrink: 0; }
-        .title { font-weight: 600; font-size: 1.2rem; color: var(--primary); letter-spacing: 1px; }
+        header { width: 100%; height: 60px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; z-index: 100; justify-content: space-between; flex-shrink: 0; }
+        .title { font-weight: 600; font-size: 1.1rem; color: var(--primary); }
 
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
-        .msg-container { display: flex; flex-direction: column; gap: 8px; max-width: 90%; animation: fadeIn 0.3s ease; }
-        .user { align-self: flex-end; } .bot { align-self: flex-start; width: 100%; }
-        .bubble { padding: 12px 16px; border-radius: 15px; font-size: 15px; line-height: 1.6; word-wrap: break-word; }
-        .user .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-right-radius: 2px; }
-        .bot .bubble { background: none; padding-left: 0; color: inherit; }
+        /* Chat Area */
+        #chat-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; }
+        .row { width: 100%; padding: 20px 15px; display: flex; gap: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; }
+        .row.user { background: var(--bg); }
+        .row.bot { background: var(--card); }
+        
+        .avatar { width: 30px; height: 30px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; color: white; }
+        .user .avatar { background: #5436da; }
+        .bot .avatar { background: var(--primary); }
 
-        #settings-menu { position: fixed; top: 0; left: -100%; width: 85%; max-width: 300px; height: 100%; background: var(--sidebar); z-index: 1001; padding: 25px; transition: 0.4s; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+        .content { flex: 1; font-size: 15px; line-height: 1.6; word-wrap: break-word; overflow: hidden; }
+        
+        /* Action Buttons */
+        .actions { display: flex; gap: 12px; margin-top: 10px; opacity: 0.6; }
+        .act-btn { background: none; border: none; color: var(--text); cursor: pointer; font-size: 12px; }
+
+        /* Popups & Menus */
+        #settings-menu { position: fixed; top: 0; left: -100%; width: 80%; max-width: 280px; height: 100%; background: var(--sidebar); z-index: 1500; padding: 25px; transition: 0.3s; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
         #settings-menu.open { left: 0; }
         #menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; }
         
-        #category-popup { display: none; position: fixed; bottom: 80px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 18px; padding: 15px; z-index: 150; width: 230px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-        .menu-btn { width: 100%; background: #2d2d39; border: none; color: white; padding: 12px; text-align: left; margin-bottom: 8px; border-radius: 10px; cursor: pointer; }
-        .advance-active { background: #0b0d11 !important; }
-        .footer { width: 100%; padding: 10px 15px 25px; background: var(--bg); flex-shrink: 0; }
-        .input-container { max-width: 800px; margin: 0 auto; background: #40414f; border-radius: 15px; display: flex; align-items: center; padding: 8px 15px; border: 1px solid var(--border); }
-        input { flex: 1; background: none; border: none; color: white; outline: none; font-size: 16px; }
+        #category-popup { display: none; position: fixed; bottom: 85px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 15px; padding: 12px; z-index: 150; width: 220px; }
+        .menu-btn { width: 100%; background: rgba(255,255,255,0.05); border: none; color: white; padding: 10px; text-align: left; margin-bottom: 5px; border-radius: 8px; font-size: 14px; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Input Area */
+        .footer { width: 100%; padding: 10px 15px 30px; background: var(--bg); }
+        .input-container { max-width: 800px; margin: 0 auto; background: var(--user-bg); border-radius: 12px; display: flex; align-items: flex-end; padding: 10px; border: 1px solid var(--border); }
+        textarea { flex: 1; background: none; border: none; color: var(--text); outline: none; font-size: 16px; resize: none; max-height: 150px; padding: 5px; line-height: 20px; }
+        .icon-btn { background: none; border: none; color: #8e8ea0; font-size: 22px; padding: 5px; cursor: pointer; }
+
+        .wiki-img { width: 100%; max-width: 300px; border-radius: 10px; margin: 10px 0; display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body onclick="closeAll()">
+<body>
 
 <div id="login-overlay">
     <div class="login-card">
-        <h2 style="color:var(--primary); margin-bottom:10px;">Veda AI Pro</h2>
+        <h2 style="color:var(--primary); margin-bottom:15px;">Veda AI Pro</h2>
         <input type="text" id="user-name-in" placeholder="Aapka Naam..." style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); background:#1a1b1e; color:white; margin-bottom:15px;">
-        <button onclick="doLogin()" style="width:100%; padding:12px; background:var(--primary); border:none; color:white; border-radius:8px; font-weight:bold; cursor:pointer;">Launch Bot</button>
+        <button onclick="doLogin()" style="width:100%; padding:12px; background:var(--primary); border:none; color:white; border-radius:8px; font-weight:bold;">Launch Bot</button>
     </div>
 </div>
 
 <div id="menu-overlay" onclick="toggleMenu(false)"></div>
 
 <header>
-    <button onclick="event.stopPropagation(); toggleMenu(true)" style="background:none; border:none; color:white; font-size:24px;">☰</button>
+    <button onclick="toggleMenu(true)" style="background:none; border:none; color:var(--text); font-size:24px;">☰</button>
     <div class="title" id="veda-title">VEDA AI</div>
-    <div id="header-user" style="font-size:10px; color:#8e8ea0;">User<br>VEDA-0000</div>
+    <div id="header-user" style="font-size:10px; color:#8e8ea0; text-align:right;">User<br>VEDA-0000</div>
 </header>
 
 <div id="chat-box"></div>
 
-<div id="category-popup" onclick="event.stopPropagation()">
-    <p style="font-size: 11px; color: #8e8ea0; margin-bottom: 10px;">SELECT MODE</p>
+<div id="category-popup">
     <button class="menu-btn" onclick="setMode('Auto')">✨ Auto Mode</button>
-    <button class="menu-btn" onclick="setMode('Study')">📚 Study Mode</button>
-    <button class="menu-btn" onclick="setMode('Anime')">⛩️ Anime Fan</button>
-    <button class="menu-btn" onclick="setMode('Wikipedia')">🌐 Wikipedia Only</button>
-    <div style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 12px;">
-        <label style="display: flex; align-items: center; gap: 10px; color: var(--advance-neon); font-size: 13px; cursor: pointer;">
-            <input type="checkbox" id="advanceModeToggle" onchange="toggleAdvanceTheme()"> 🚀 ACTIVATE PRO (LLM)
-        </label>
-    </div>
+    <button class="menu-btn" onclick="setMode('Wikipedia')">🌐 Wikipedia</button>
+    <button class="menu-btn" onclick="setMode('Image')">🎨 AI Image Mode</button>
+    <hr style="opacity:0.1; margin:8px 0;">
+    <label style="font-size:12px; color:#ff0055; cursor:pointer; display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="advanceModeToggle" onchange="toggleAdvanceTheme()"> PRO LLM (Vercel)
+    </label>
 </div>
 
-<div id="settings-menu" onclick="event.stopPropagation()">
+<div id="settings-menu">
     <h3 style="color:var(--primary); margin-bottom:20px;">Settings</h3>
     <button class="menu-btn" onclick="toggleLightMode()">🌓 Light/Dark Mode</button>
-    <button class="menu-btn" onclick="sendFeedback()">⭐ Feedback</button>
-    <button class="menu-btn" onclick="downloadChat()">📥 Download Chat</button>
+    <button class="menu-btn" onclick="location.reload()">🔄 Reset Chat</button>
     <button class="menu-btn" onclick="clearBrain()" style="color:#ef4444;">🧠 Clear Memory</button>
 </div>
 
 <div class="footer">
     <div class="input-container">
-        <button onclick="event.stopPropagation(); toggleCategory()" style="background:none; border:none; color:#8e8ea0; font-size:24px; margin-right:12px;">➕</button>
-        <input type="text" id="user-in" placeholder="Ask Veda anything..." autocomplete="off">
-        <button onclick="handleSend()" style="background:none; border:none; color:var(--primary); font-size:24px;">⬆️</button>
+        <button class="icon-btn" onclick="toggleCategory()">➕</button>
+        <textarea id="user-in" placeholder="Ask Veda anything..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <button class="icon-btn" style="color:var(--primary)" onclick="handleSend()">⬆</button>
     </div>
 </div>
 
 <script>
-let vedaMemory = JSON.parse(localStorage.getItem('vedaMemory')) || {};
-let currentMode = "Auto";
-let chatLog = [];
 let userName = localStorage.getItem('vedaUserName') || "User";
-const vedaID = localStorage.getItem('vedaUserID') || "VEDA-" + Math.floor(1000 + Math.random() * 9000);
+let currentMode = "Auto";
 
-const VERCEL_URL = "https://veda-brain-q1ju.vercel.app/ask";
-
-/* ================== SMART NLP ================== */
-function detectIntent(q) {
-    q = q.toLowerCase();
-
-    if (q.match(/who is|kaun hai|what is|tell me about/)) return "knowledge";
-    if (q.match(/hello|hi|hey|namaste/)) return "greeting";
-    if (q.match(/joke|funny/)) return "fun";
-
-    return "unknown";
-}
-
-function cleanQuery(q) {
-    return q.replace(/who is|what is|tell me about|kaun hai/gi, "").trim();
-}
-
-/* ================== WIKIPEDIA ================== */
-async function fetchWiki(query) {
-    try {
-        const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-        const data = await res.json();
-        return data.extract || null;
-    } catch {
-        return null;
+// --- 1. Login Logic ---
+function doLogin() {
+    const name = document.getElementById('user-name-in').value.trim();
+    if(name) {
+        userName = name;
+        localStorage.setItem('vedaUserName', name);
+        document.getElementById('login-overlay').style.display = 'none';
+        updateUI();
+        addMessage(`Namaste **${userName}**! Main Veda AI hoon. Main aapki kya madad kar sakta hoon?`, 'bot');
     }
 }
+if(localStorage.getItem('vedaUserName')) document.getElementById('login-overlay').style.display = 'none';
 
-/* ================== RESPONSE STYLE ================== */
-function styleResponse(text) {
-    const styles = [
-        t => `👉 ${t}`,
-        t => `📘 ${t}`,
-        t => `😄 ${t}`,
-        t => `🔎 ${t}`
-    ];
-    return styles[Math.floor(Math.random() * styles.length)](text);
-}
-
-/* ================== MAIN AI ================== */
+// --- 2. AI Logic ---
 async function processLogic(q) {
-
     const query = q.toLowerCase().trim();
-    const intent = detectIntent(query);
-    const clean = cleanQuery(query);
     const isAdv = document.getElementById('advanceModeToggle').checked;
 
-    /* ===== 1. PRO AI (Vercel) ===== */
-    if (isAdv || currentMode === "Auto") {
+    // A. Identity
+    if(query.includes("owner") || query.includes("kisne banaya")) return "Mujhe **Thoughts Sounds** ne banaya hai.";
+
+    // B. Image Generation
+    if(query.includes("image") || query.includes("photo") || currentMode === "Image") {
+        const p = query.replace(/image|photo|generate|dikhao/g, "").trim();
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p || "nature")}?width=800&height=800&nologo=true`;
+        return `Ye rahi aapki image: <br><img src="${url}" class="wiki-img">`;
+    }
+
+    // C. Wikipedia
+    if(query.length > 3) {
         try {
-            const res = await fetch(VERCEL_URL, {
-                method: "POST",
-                headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({ query: q, user: userName })
-            });
-
+            const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
             const data = await res.json();
-            if (data.reply) return styleResponse(data.reply);
-
-        } catch {
-            console.log("⚠️ AI server offline → switching local");
-        }
+            if(data.extract) return (data.thumbnail ? `<img src="${data.thumbnail.source}" class="wiki-img">` : "") + data.extract;
+        } catch(e) {}
     }
 
-    /* ===== 2. LOCAL DATABASE ===== */
-    const db = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...vedaMemory };
-
-    if (db[query]) return db[query];
-
-    /* ===== 3. KNOWLEDGE (Wikipedia Smart) ===== */
-    if (intent === "knowledge") {
-        let wiki = await fetchWiki(clean);
-        if (wiki) return styleResponse(wiki);
-    }
-
-    /* ===== 4. NORMAL CONVERSATION ===== */
-    if (intent === "greeting") {
-        return `Namaste ${userName}! 😊`;
-    }
-
-    if (intent === "fun") {
-        return "😄 Ek aadmi doctor ke paas gaya... aur bola mujhe AI banado!";
-    }
-
-    /* ===== 5. FINAL FALLBACK ===== */
-    let wikiFallback = await fetchWiki(query);
-    if (wikiFallback) return styleResponse(wikiFallback);
-
-    return "🤔 Mujhe iska exact jawab nahi pata... par tum mujhe sikha sakte ho!";
+    return "Mujhe iska jawab nahi pata, par main seekh raha hoon!";
 }
 
-/* ================== UI ================== */
-function addMessage(txt, sender, id = null) {
-    const box = document.getElementById('chat-box');
-
-    const div = document.createElement('div');
-    div.className = `msg-container ${sender}`;
-    if(id) div.id = id;
-
-    div.innerHTML = `<div class="bubble">${txt}</div>`;
-
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
-
-    chatLog.push(`${sender}: ${txt}`);
-    return div;
-}
-
-/* ================== SEND ================== */
+// --- 3. UI Logic ---
 async function handleSend() {
     const inp = document.getElementById('user-in');
     const val = inp.value.trim();
-
     if(!val) return;
 
     addMessage(val, 'user');
     inp.value = "";
+    inp.style.height = 'auto';
 
-    const tId = "think-" + Date.now();
-    addMessage("⏳ Thinking...", "bot", tId);
+    const id = "bot-" + Date.now();
+    addMessage("Searching...", "bot", id);
 
     const reply = await processLogic(val);
-
-    document.getElementById(tId).querySelector('.bubble').innerHTML = reply;
+    updateBotMsg(id, reply);
 }
 
-/* ================== EXTRA ================== */
-function toggleLightMode() { document.body.classList.toggle('light-mode'); }
+function addMessage(txt, role, id=null) {
+    const box = document.getElementById('chat-box');
+    const row = document.createElement('div');
+    row.className = `row ${role}`;
+    if(id) row.id = id;
 
+    row.innerHTML = `
+        <div class="avatar">${role === 'user' ? 'U' : 'V'}</div>
+        <div class="content">
+            <div class="txt-body">${txt}</div>
+            ${role === 'bot' ? `<div class="actions">
+                <button class="act-btn" onclick="speak('${id}')">🔊 Speak</button>
+                <button class="act-btn" onclick="copy('${id}')">📋 Copy</button>
+            </div>` : ''}
+        </div>`;
+    box.appendChild(row);
+    box.scrollTop = box.scrollHeight;
+}
+
+function updateBotMsg(id, txt) {
+    document.getElementById(id).querySelector('.txt-body').innerHTML = txt;
+}
+
+// --- 4. Extra Features ---
 function toggleMenu(s) { 
     document.getElementById('settings-menu').classList.toggle('open', s);
     document.getElementById('menu-overlay').style.display = s ? 'block' : 'none';
 }
-
 function toggleCategory() {
     const p = document.getElementById('category-popup');
     p.style.display = (p.style.display === 'block') ? 'none' : 'block';
 }
-
-function closeAll() { 
-    document.getElementById('category-popup').style.display = 'none'; 
-    toggleMenu(false); 
+function toggleLightMode() { document.body.classList.toggle('light-mode'); }
+function setMode(m) { currentMode = m; toggleCategory(); addMessage(`Mode changed to: ${m}`, 'bot'); }
+function updateUI() { document.getElementById('header-user').innerHTML = `${userName}<br>VEDA-7777`; }
+function speak(id) {
+    const t = document.getElementById(id).querySelector('.txt-body').innerText;
+    const u = new SpeechSynthesisUtterance(t); u.lang = 'hi-IN'; window.speechSynthesis.speak(u);
 }
-
-function setMode(m) { 
-    currentMode = m; 
-    addMessage(`⚙️ Mode changed to: ${m}`, "bot"); 
-    toggleCategory(); 
+function copy(id) {
+    const t = document.getElementById(id).querySelector('.txt-body').innerText;
+    navigator.clipboard.writeText(t); alert("Copied!");
 }
-
-function updateUI() { 
-    document.getElementById('header-user').innerHTML = `${userName}<br>${vedaID}`; 
-}
-
-function clearBrain() { 
-    if(confirm("Clear memory?")) { 
-        localStorage.clear(); 
-        location.reload(); 
-    } 
-}
-
 function toggleAdvanceTheme() {
     const isAdv = document.getElementById('advanceModeToggle').checked;
-    document.body.classList.toggle('advance-active', isAdv);
     document.getElementById('veda-title').innerText = isAdv ? "VEDA PRO 🚀" : "VEDA AI";
 }
-
-document.getElementById('user-in').addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') handleSend();
-});
 </script>
 </body>
 </html>
