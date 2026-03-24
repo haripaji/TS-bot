@@ -114,7 +114,7 @@
     const vedaID = localStorage.getItem('vedaUserID') || "VEDA-" + Math.floor(1000 + Math.random() * 9000);
     localStorage.setItem('vedaUserID', vedaID);
 
-    window.onload = () => { startClock(); updateUI(); addMessage("Namaste! Mode change karne ke liye ➕ dabayein.", "bot"); };
+    window.onload = () => { startClock(); updateUI(); addMessage("Namaste! Mai aapki kya help karoon, kya aapke dimag mai koi creative idea💡 hai .", "bot"); };
 
     function startClock() {
         setInterval(() => {
@@ -148,7 +148,7 @@
 
     function setMode(m) { 
         currentMode = m; 
-        addMessage(`Mode switched to: **${m}**`, "bot"); 
+        addMessage(`Mode switched to: *${m}*`, "bot"); 
         toggleCategory(); 
     }
 
@@ -163,7 +163,7 @@
         if(isAdv) {
             // Grok-style Thinking Indicator
             const tId = "think-" + Date.now();
-            const thinkBox = addMessage("🧠 *Deep Thinking...*", "bot", tId);
+            const thinkBox = addMessage("🧠 Deep Thinking...", "bot", tId);
             const reply = await processLogic(val);
             document.getElementById(tId).innerHTML = `<div class="bubble">${reply}</div>`; // Replace thinking text
         } else {
@@ -190,13 +190,13 @@
 
         // 2. Math Solver
         if (/^[\d+\-*/().\s^]+$/.test(query) && /[0-9]/.test(query)) {
-            try { return `🧮 Calculation: **${eval(query)}**`; } catch(e) {}
+            try { return `🧮 Calculation: ${eval(query)}`; } catch(e) {}
         }
 
         // 3. Local Database Search (Core + Study + Anime + Learned)
         const db = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned, ...vedaMemory };
         if (db[query]) {
-            return (isAdv ? "⚡ " : "") + db[query];
+            return (isAdv ? " " : "") + db[query];
         }
 
         // 4. Auto-Wikipedia (Internet Search)
@@ -209,8 +209,42 @@
         learningMode.active = true;
         learningMode.question = query;
         return `Mujhe iska jawab nahi pata. Kya aap mujhe sikha sakte hain? <br><br> <button onclick="window.open('https://google.com/search?q=${query}')" class="menu-btn" style="width:auto; display:inline-block; border:1px solid var(--primary);">Search Google</button>`;
+    
+    // 1. Learning State (Updated with Refusal & Duplicate Check)
+    if (learningMode.active) {
+        const lowerInput = q.toLowerCase().trim();
+        
+        // --- NAYA: Refusal Recognition (Mana karne par stop karega) ---
+        const manaKarneWaleShabd = [
+            "nahin", "nahi", "no", "main nahin sikha sakta", "tum khud sikh lo", 
+            "main kiyon sikaon", "bhag idar se", "bhag yahan se", "nikal", 
+            "pata nahi", " bc", "papa bol", " mc", "apne baap ko bol", "mujhse mat pucho", "kyun bataun", "pagal ho kya"
+        ];
+
+        if (manaKarneWaleShabd.some(word => lowerInput.includes(word))) {
+            learningMode.active = false;
+            return "Theek hai, koi baat nahi! Main khud seekhne ki koshish karunga. 😊";
+        }
+
+        // --- NAYA: Duplicate Check (Agar data pehle se hai toh save nahi karega) ---
+        const allLocalData = { ...window.vedaCore, ...window.vedaStudy, ...window.vedaAnime, ...window.vedaLearned };
+        const alreadyExists = Object.values(allLocalData).some(val => 
+            val.toString().toLowerCase() === lowerInput
+        );
+
+        if (alreadyExists) {
+            learningMode.active = false;
+            return "Dhanyawad! Lekin ye toh mujhe pehle se hi pata hai. ✨";
+        }
+
+        // --- Purana Save Logic ---
+        vedaMemory[learningMode.question] = q;
+        localStorage.setItem('vedaMemory', JSON.stringify(vedaMemory));
+        learningMode.active = false;
+        return "Dhanyawad! Maine ise naye database mein save kar liya hai. 😊";
     }
 
+    
     async function fetchWiki(query) {
         try {
             const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
