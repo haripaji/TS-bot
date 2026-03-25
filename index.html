@@ -136,52 +136,79 @@ async function processLogic(q) {
     const query = q.toLowerCase().trim();
     const isAdv = document.getElementById('advanceModeToggle').checked;
 
-    // 1. AI Image Mode 🎨
-    if(query.includes("image") || query.includes("photo") || currentMode === 'Image') {
-        const p = query.replace(/image|photo|generate|create|make|dikhao/g, "").trim();
-        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p || "nature background")}?width=1024&height=1024&nologo=true`;
+    // 1. AI Image Mode (Improved Trigger) 🎨
+    const imageKeywords = ["image", "photo", "pic", "generate", "create", "dikhao", "tasveer"];
+    if(imageKeywords.some(k => query.includes(k)) || currentMode === 'Image') {
+        let p = query;
+        imageKeywords.forEach(k => p = p.replace(k, ""));
+        p = p.trim() || "beautiful scenery";
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true`;
         return `Lo bhai, ye raha result: <br><img src="${url}" class="ai-media">`;
     }
 
-    // 2. Local Database (Study, Anime, Responses) 📂
-    const db = { ...(window.vedaCore||{}), ...(window.vedaStudy||{}), ...(window.vedaAnime||{}), ...(window.vedaResponses||{}), ...(JSON.parse(localStorage.getItem('vedaMemory'))||{}) };
+    // 2. Local Database & Keyword Matching 📂
+    const db = { 
+        ...(window.vedaCore||{}), 
+        ...(window.vedaStudy||{}), 
+        ...(window.vedaAnime||{}), 
+        ...(window.vedaResponses||{}), 
+        ...(JSON.parse(localStorage.getItem('vedaMemory'))||{}) 
+    };
+
+    // First check for exact match
     if(db[query]) return db[query];
 
-    // 3. Math Solver 🔢
+    // Second: Check if query contains any key from database
+    for (let key in db) {
+        if (query.includes(key) && key.length > 2) {
+            return db[key];
+        }
+    }
+
+    // 3. Identity & Developer Check
+    if(query.includes("owner") || query.includes("developer") || query.includes("thoughts sounds")) {
+        return "Mujhe **Thoughts Sounds** ne design kiya hai. Wo mere creator aur developer hain. 😎";
+    }
+
+    // 4. Math Solver 🔢
     if (/^[0-9+\-*/(). ]+$/.test(query) && query.length >= 3) {
         try { return `Calculation result: **${eval(query)}**`; } catch(e) {}
     }
 
-    // 4. Identity Check
-    if(query.includes("owner") || query.includes("developer")) return "Mujhe **Thoughts Sounds** ne design kiya hai.";
-
     // 5. PRO Mode (Vercel) 🚀
     if(isAdv) {
         try {
-            const res = await fetch(VERCEL_URL, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ query: q, user: userName }) });
+            const res = await fetch(VERCEL_URL, { 
+                method: "POST", 
+                headers: {"Content-Type":"application/json"}, 
+                body: JSON.stringify({ query: q, user: userName }) 
+            });
             const data = await res.json();
             if(data.reply) return data.reply;
         } catch(e) {}
     }
 
-    // 6. Internet Search Fallback (Direct Chat Response) 🌐
+    // 6. Enhanced Internet Search (DuckDuckGo + Wikipedia) 🌐
     try {
+        // Step A: Try DuckDuckGo Abstract
         const searchRes = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`);
         const data = await searchRes.json();
-        
         if (data.AbstractText) {
-            return `🌐 **Web Search Result:** <br><br>${data.AbstractText} <br><br><small>Source: Google/DuckDuckGo</small>`;
+            return `🌐 **Search Result:** <br><br>${data.AbstractText} <br><br><small>Source: DuckDuckGo</small>`;
         }
         
-        // Wikipedia Filter
-        const wikiRes = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+        // Step B: Try Wikipedia (English first for better data, then Hindi)
+        const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
         const wikiData = await wikiRes.json();
-        if(wikiData.extract && !wikiData.extract.includes("वर्णमाला")) {
-            return (wikiData.thumbnail ? `<img src="${wikiData.thumbnail.source}" class="ai-media" style="max-width:200px;"><br>` : "") + wikiData.extract;
+        if(wikiData.extract && wikiData.type !== "disambiguation") {
+            let imgHtml = wikiData.thumbnail ? `<img src="${wikiData.thumbnail.source}" class="ai-media" style="max-width:250px;"><br>` : "";
+            return `${imgHtml}**${wikiData.title}**: ${wikiData.extract} <br><br><small>Source: Wikipedia</small>`;
         }
-    } catch(e) {}
+    } catch(e) {
+        console.log("Search error:", e);
+    }
 
-    return "🤔 Mujhe iska jawab nahi mila. Kya aap mujhe sikha sakte hain?";
+    return "🤔 Mujhe iska jawab nahi mila. Kya aap mujhe sikha sakte hain? Aap 'Study Mode' ya 'PRO Mode' try kar sakte hain!";
 }
 
 // --- UI LOGIC ---
