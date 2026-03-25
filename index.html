@@ -188,28 +188,38 @@ async function processLogic(q) {
         } catch(e) {}
     }
 
-    // 6. Enhanced Internet Search (DuckDuckGo + Wikipedia) 🌐
+
+        // 6. PRO Internet Search (Hindi + English Hybrid) 🌐
     try {
-        // Step A: Try DuckDuckGo Abstract
-        const searchRes = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`);
-        const data = await searchRes.json();
-        if (data.AbstractText) {
-            return `🌐 **Search Result:** <br><br>${data.AbstractText} <br><br><small>Source: DuckDuckGo</small>`;
-        }
+        // A. Pehle Hindi Wikipedia check karo (For Desi Context)
+        const hindiWiki = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+        const hData = await hindiWiki.json();
         
-        // Step B: Try Wikipedia (English first for better data, then Hindi)
-        const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-        const wikiData = await wikiRes.json();
-        if(wikiData.extract && wikiData.type !== "disambiguation") {
-            let imgHtml = wikiData.thumbnail ? `<img src="${wikiData.thumbnail.source}" class="ai-media" style="max-width:250px;"><br>` : "";
-            return `${imgHtml}**${wikiData.title}**: ${wikiData.extract} <br><br><small>Source: Wikipedia</small>`;
+        if (hData.extract && hData.type !== "disambiguation" && hData.extract.length > 100) {
+            let img = hData.thumbnail ? `<img src="${hData.thumbnail.source}" class="ai-media">` : "";
+            return `🇮🇳 **Veda Hindi Search:**<br>${img}<br>${hData.extract}<br><br><small>Source: Wikipedia Hindi</small>`;
         }
-    } catch(e) {
-        console.log("Search error:", e);
+
+        // B. Agar Hindi mein nahi mila, toh English Wikipedia (Deep Knowledge)
+        const engWiki = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+        const eData = await engWiki.json();
+        
+        if (eData.extract && eData.type !== "disambiguation") {
+            let img = eData.thumbnail ? `<img src="${eData.thumbnail.source}" class="ai-media">` : "";
+            return `🌐 **Global Search Result:**<br>${img}<br>**${eData.title}**: ${eData.extract}<br><br><small>Source: Wikipedia Global</small>`;
+        }
+
+        // C. Last Resort: DuckDuckGo (Quick Facts)
+        const ddg = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`);
+        const dData = await ddg.json();
+        if (dData.AbstractText) {
+            return `🔍 **Quick Info:**<br><br>${dData.AbstractText}<br><br><small>Source: DDG Search</small>`;
+        }
+
+    } catch (e) {
+        console.error("Search Error:", e);
     }
 
-    return "🤔 Mujhe iska jawab nahi mila. Kya aap mujhe sikha sakte hain? Aap 'Study Mode' ya 'PRO Mode' try kar sakte hain!";
-}
 
 // --- UI LOGIC ---
 async function handleSend() {
