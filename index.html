@@ -3,175 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Veda AI Pro | Modular</title>
-    <link rel="stylesheet" href="style.css"> <style>
-        /* Internal Fallback Styles */
-        :root { --primary: #10a37f; --bg: #0b0e11; --text: #ececf1; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .bubble { padding: 12px; border-radius: 15px; max-width: 85%; line-height: 1.5; }
-        .user .bubble { background: var(--primary); align-self: flex-end; margin-left: auto; }
-        .bot .bubble { background: #2f2f3d; align-self: flex-start; }
-        .input-area { padding: 15px; display: flex; gap: 10px; background: #1a1a2e; }
-        input { flex: 1; padding: 12px; border-radius: 25px; border: none; outline: none; }
+    <title>Veda AI Ultra | Thoughts Sounds</title>
+    
+    <style>
+        :root { 
+            --primary: #10a37f; --bg: #0b0e11; --sidebar: #15191c; 
+            --text: #ffffff; --border: rgba(255,255,255,0.08); --card: #1e2329; 
+            --accent: linear-gradient(45deg, #ff80ab, #7e57c2);
+        }
+        .light-theme { 
+            --bg: #ffffff; --text: #1e2329; --sidebar: #f0f2f5; 
+            --card: #ffffff; --border: rgba(0,0,0,0.1); 
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
+        body { height: 100vh; background: var(--bg); color: var(--text); display: flex; flex-direction: column; overflow: hidden; transition: 0.3s; }
+
+        header { height: 60px; background: var(--sidebar); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+        .logo { font-weight: 700; color: var(--primary); font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        
+        #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: var(--sidebar); padding: 20px; transition: .4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 20; box-shadow: 5px 0 15px rgba(0,0,0,0.5); border-right: 1px solid var(--border); }
+        #sidebar.open { left: 0; }
+        
+        .nav-btn { display: block; width: 100%; margin: 10px 0; padding: 12px; background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 12px; cursor: pointer; text-align: left; transition: 0.3s; }
+        .nav-btn:hover { border-color: var(--primary); }
+
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .msg-container { max-width: 85%; animation: fadeIn 0.3s ease; display: flex; flex-direction: column; }
+        .user { align-self: flex-end; }
+        .bot { align-self: flex-start; }
+        
+        .bubble { padding: 12px 18px; border-radius: 18px; font-size: 15px; line-height: 1.5; box-shadow: 0 2px 10px rgba(0,0,0,0.1); white-space: pre-wrap; }
+        .user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .bot .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+
+        .typing { font-size: 12px; color: var(--primary); margin-left: 20px; display: none; margin-bottom: 10px; font-weight: bold; }
+
+        .input-area { padding: 15px; background: var(--bg); border-top: 1px solid var(--border); }
+        .input-wrapper { max-width: 900px; margin: 0 auto; background: var(--card); border-radius: 25px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid var(--border); }
+        input { flex: 1; background: none; border: none; color: var(--text); font-size: 16px; outline: none; padding: 12px; }
+        
+        .icon-btn { background: none; border: none; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; transition: 0.2s; border-radius: 50%; }
+        .icon-btn:hover { background: rgba(255,255,255,0.05); }
+        #mic-btn.glow { background: var(--accent); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(126, 87, 194, 0.4); } 100% { box-shadow: 0 0 0 15px rgba(126, 87, 194, 0); } }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #credit { text-align: center; font-size: 10px; color: #777; padding-top: 5px; }
     </style>
 </head>
 <body>
 
-<header style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;">
-    <div style="color: var(--primary); font-weight: bold;">VEDA OS v3.0</div>
-    <div id="veda-id-display" style="font-size: 10px; opacity: 0.5;"></div>
+<div id="sidebar">
+    <h3 style="margin-bottom: 20px; color: var(--primary);">Veda Settings</h3>
+    <button class="nav-btn" onclick="toggleSidebar()">⬅ Back to Chat</button>
+    <button class="nav-btn" onclick="clearHistory()">🗑 Clear Memory</button>
+    <button class="nav-btn" onclick="window.location.href='mailto:harendrashrivastav44@gmail.com'">📩 Send Feedback</button>
+    <div style="margin-top: 30px; font-size: 12px; opacity: 0.6;">
+        Device ID: <span id="device-id"></span><br>
+        Version: 1.2.0 (Ultra)
+    </div>
+</div>
+
+<header>
+    <div class="logo">
+        <span onclick="toggleSidebar()" style="cursor:pointer">☰</span>
+        VEDA AI ULTRA
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <select id="lang-picker" class="nav-btn" style="margin:0; padding:4px 8px; font-size:12px; width:auto;" onchange="changeLanguage()">
+            <option value="hi">हिन्दी</option>
+            <option value="en" selected>English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+        </select>
+        <button onclick="toggleTheme()" class="icon-btn">🌓</button>
+    </div>
 </header>
 
 <div id="chat-box"></div>
+<div id="typing" class="typing">Veda is analyzing...</div>
 
 <div class="input-area">
-    <input type="text" id="user-in" placeholder="Ask anything...">
-    <button onclick="handleSend()" style="background: var(--primary); border: none; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer;">Send</button>
+    <div class="input-wrapper">
+        <button id="mic-btn" class="icon-btn" title="Voice Input">🎤</button>
+        <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off">
+        <button onclick="handleSend()" class="icon-btn" style="color: var(--primary); font-size: 20px;">➤</button>
+    </div>
+    <div id="credit">thoughts sounds bot | v1.2.0</div>
 </div>
 
-<script src="responses.js"></script> <script src="study.js"></script>     <script src="anime.js"></script>     <script src="core.js"></script>      <script>
-// ==========================================
-// VEDA CORE BRIDGE (Links all .js files)
-// ==========================================
+<script>
+// --- CONFIGURATION ---
+const API_KEY = "PASTE_YOUR_GEMINI_KEY_HERE"; // <--- Add your API key here
+const FORMSPREE_ID = "xwvrzgvj";
+const vedaID = "V-" + Math.floor(Math.random()*90000 + 10000);
 
-const CONFIG = {
-    formspreeId: "xwvrzgvj",
-    botName: "Veda AI Pro",
-    userName: localStorage.getItem('vedaName') || "User",
-    vedaID: localStorage.getItem('vedaID') || "VEDA-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-    lang: localStorage.getItem('vedaLang') || "hi-IN"
+const TRANSLATIONS = {
+    en: { welcome: "Hello! I am Veda AI. How can I assist you today?", thinking: "Veda is thinking...", report: "Report sent silently.", wikiError: "I couldn't find specific wiki data, but here is what I know:" },
+    hi: { welcome: "नमस्ते! मैं Veda AI हूँ। मैं आज आपकी क्या मदद कर सकता हूँ?", thinking: "Veda सोच रहा है...", report: "रिपोर्ट चुपचाप भेज दी गई है।", wikiError: "मुझे विकिपीडिया पर डेटा नहीं मिला, पर मेरी जानकारी यह है:" }
 };
 
-// Global State for study.js and responses.js to use
-let chatHistory = [];
-let isSilentReportingEnabled = true;
+let currentLang = localStorage.getItem('vedaLang') || 'en';
+const chatBox = document.getElementById('chat-box');
+const userInput = document.getElementById('user-input');
+const typingInd = document.getElementById('typing');
 
 window.onload = () => {
-    document.getElementById('veda-id-display').innerText = CONFIG.vedaID;
-    
-    // Initial Animation (from anime.js if available)
-    if(typeof startVedaIntro === "function") startVedaIntro();
-    
-    addMessage(`System Initialized. Welcome back, ${CONFIG.userName}.`, 'bot');
+    document.getElementById('device-id').innerText = vedaID;
+    document.getElementById('lang-picker').value = currentLang;
+    addMessage(TRANSLATIONS[currentLang].welcome, 'bot');
 };
 
+// --- LOGIC FUNCTIONS ---
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleTheme() { document.body.classList.toggle('light-theme'); }
+
+function changeLanguage() {
+    currentLang = document.getElementById('lang-picker').value;
+    localStorage.setItem('vedaLang', currentLang);
+    addMessage(TRANSLATIONS[currentLang].welcome, 'bot');
+}
+
 async function handleSend() {
-    const input = document.getElementById('user-in');
-    const query = input.value.trim();
-    if (!query) return;
+    const query = userInput.value.trim();
+    if(!query) return;
 
     addMessage(query, 'user');
-    input.value = "";
+    userInput.value = "";
 
-    // 1. Check for local responses (from responses.js)
-    // Assuming your responses.js has a function: getLocalResponse(query)
-    let response = "";
-    if (typeof getLocalResponse === "function") {
-        response = getLocalResponse(query);
+    // 1. Silent Reporting Logic
+    if(query.toLowerCase().includes("report")) {
+        sendReport(query);
+        addMessage(TRANSLATIONS[currentLang].report, 'bot');
+        return;
     }
 
-    // 2. If no local response, use the AI Brain or Search
-    if (!response) {
-        response = await fetchAIBrain(query);
-    }
-
-    // 3. Silent Reporting (Integration for Formspree)
-    if (query.length > 50 || query.includes("error") || query.includes("bug")) {
-        triggerSilentReport("Automated Insight", query);
-    }
-
-    // 4. Update Memory (from study.js)
-    if (typeof updateVedaMemory === "function") {
-        updateVedaMemory(query, response);
-    }
-
-    typeMessage(response);
+    // 2. Wikipedia + AI Hybrid Logic
+    typingInd.style.display = "block";
+    
+    // Try Wikipedia for quick facts
+    const wikiData = await fetchWiki(query);
+    
+    // Always use AI for better conversational response
+    const aiResponse = await getGeminiResponse(query, wikiData);
+    
+    typingInd.style.display = "none";
+    typeEffect(aiResponse);
 }
 
-// --- ADVANCED FEATURES ---
-
-async function fetchAIBrain(q) {
-    // Fallback logic if Vercel is offline
+// Gemini API Integration
+async function getGeminiResponse(prompt, context = "") {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
     try {
-        const res = await fetch("https://veda-brain-q1ju.vercel.app/ask", {
+        const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: q, user: CONFIG.userName, id: CONFIG.vedaID })
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: `Context: ${context}\n\nUser: ${prompt}` }] }]
+            })
         });
-        const data = await res.json();
-        return data.reply;
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
     } catch (e) {
-        // Wikipedia Fallback
-        return await fetchWikiInfo(q);
+        return "I'm having trouble connecting to my brain. Please check your API key.";
     }
 }
 
-async function fetchWikiInfo(q) {
-    const url = `https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    return data.extract || "I am still learning about this. Should I report this to my developer?";
+async function fetchWiki(q) {
+    try {
+        const res = await fetch(`https://${currentLang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+        const data = await res.json();
+        return data.extract || "";
+    } catch (e) { return ""; }
 }
 
-async function triggerSilentReport(type, content) {
-    if(!isSilentReportingEnabled) return;
-    
-    fetch(`https://formspree.io/f/${CONFIG.formspreeId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            _subject: `Veda Report: ${type}`,
-            User: CONFIG.userName,
-            VedaID: CONFIG.vedaID,
-            Log: content,
-            Lang: CONFIG.lang
-        })
+async function sendReport(msg) {
+    fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ vedaID, lang: currentLang, message: msg })
     });
 }
 
-function typeMessage(text) {
-    const box = document.getElementById('chat-box');
-    const container = document.createElement('div');
-    container.className = "msg-container bot";
-    const bubble = document.createElement('div');
-    bubble.className = "bubble";
-    container.appendChild(bubble);
-    box.appendChild(container);
-
-    let i = 0;
-    const speed = 25;
-    function typing() {
-        if (i < text.length) {
-            bubble.innerHTML += text.charAt(i);
-            i++;
-            box.scrollTop = box.scrollHeight;
-            setTimeout(typing, speed);
-        } else {
-            // Trigger TTS if you want Veda to speak
-            speak(text);
-        }
-    }
-    typing();
-}
-
+// --- UI UTILS ---
 function addMessage(text, side) {
-    const box = document.getElementById('chat-box');
     const div = document.createElement('div');
     div.className = `msg-container ${side}`;
     div.innerHTML = `<div class="bubble">${text}</div>`;
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function speak(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = CONFIG.lang;
-    window.speechSynthesis.speak(utterance);
+function typeEffect(text) {
+    const div = document.createElement('div');
+    div.className = "msg-container bot";
+    const bubble = document.createElement('div');
+    bubble.className = "bubble";
+    div.appendChild(bubble);
+    chatBox.appendChild(div);
+
+    let i = 0;
+    let interval = setInterval(() => {
+        bubble.innerText = text.substring(0, i);
+        if(i++ >= text.length) {
+            clearInterval(interval);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    }, 10);
 }
 
-document.getElementById('user-in').addEventListener('keypress', e => { if (e.key === 'Enter') handleSend(); });
+// --- VOICE & EVENTS ---
+const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+rec.lang = 'hi-IN';
+document.getElementById('mic-btn').onclick = () => rec.start();
+rec.onstart = () => document.getElementById('mic-btn').classList.add('glow');
+rec.onend = () => document.getElementById('mic-btn').classList.remove('glow');
+rec.onresult = (e) => { userInput.value = e.results[0][0].transcript; handleSend(); };
 
+userInput.onkeypress = (e) => { if(e.key === 'Enter') handleSend(); };
+function clearHistory() { if(confirm("Clear memory?")) { chatBox.innerHTML = ""; toggleSidebar(); } }
 </script>
 </body>
 </html>
