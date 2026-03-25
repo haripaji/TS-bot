@@ -42,7 +42,7 @@
 </head>
 <body>
 
-<div id="sidebar">
+<div id="sidebar" class="btn">
     <h2 style="color: var(--primary); margin-bottom: 20px;">Veda Ultra</h2>
     <p style="font-size: 12px; opacity: 0.7; margin-bottom: 20px;">Category Selector:</p>
     <button class="btn" style="width:100%; text-align:left; font-size:16px; margin-bottom:10px;" onclick="setCategory('auto')">🤖 Auto Mode (AI)</button>
@@ -121,25 +121,28 @@ async function handleSend() {
 
     let response = "";
 
-    // 1. Check Calculator Priority
-    if(AICalculator.check(query)) {
-        response = AICalculator.solve(query);
-    }
+    async function handleSend() {
+    let input = document.getElementById('user-input').value;
+    if(!input) return;
 
-    // 2. Route by Category (If not calculator)
-    if(!response) {
-        if(currentCategory === 'study' && window.StudyModule) response = StudyModule.get(query);
-        else if(currentCategory === 'anime' && window.AnimeModule) response = AnimeModule.get(query);
-    }
+    addMessage(input, 'user'); // User message
+    document.getElementById('user-input').value = "";
 
-    // 3. AUTO MODE / FALLBACK (Wikipedia + Gemini AI)
-    if(!response || currentCategory === 'auto') {
-        const wikiData = await fetchWiki(query);
-        response = await getGeminiAI(query, wikiData);
-    }
+    // Brain Process
+    let result = await VedaCore.brain(input);
+    
+    // Bot Text Response
+    addMessage(result.text, 'bot');
 
-    typingInd.style.display = "none";
-    typeEffect(response);
+    // Bot Image Response (Agar Wiki se image mili)
+    if (result.image) {
+        let chatBox = document.getElementById('chat-box');
+        let imgDiv = document.createElement('div');
+        imgDiv.className = "msg-container bot";
+        imgDiv.innerHTML = `<img src="${result.image}" style="width:180px; border-radius:10px; margin: 5px 0; border: 2px solid var(--primary);">`;
+        chatBox.appendChild(imgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 }
 
 // ===== EXTERNAL API CALLS =====
