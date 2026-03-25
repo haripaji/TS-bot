@@ -1,208 +1,216 @@
 <!DOCTYPE html>
-<html lang="hi", lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Veda AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Veda AI Pro</title>
+    
     <style>
         :root { 
-            --primary: #10a37f; --bg: #0b0e11; --sidebar: #15191c; 
-            --text: #ffffff; --border: rgba(255,255,255,0.08); --card: #1e2329; 
-            --accent: linear-gradient(45deg, #00f2fe, #4facfe);
+            --primary: #10a37f; --bg: #343541; --sidebar: #202123; 
+            --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #444654; 
+            --user-bg: #40414f;
         }
-        .light-theme { --bg: #f8f9fa; --text: #1e2329; --sidebar: #ffffff; --card: #f0f2f5; --border: rgba(0,0,0,0.1); }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
-        body { height: 100vh; background: var(--bg); color: var(--text); display: flex; flex-direction: column; overflow: hidden; transition: 0.3s; }
-
-        /* UI Elements */
-        header { height: 60px; background: var(--sidebar); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; justify-content: space-between; }
-        #sidebar { position: fixed; left: -100%; top: 0; width: 280px; height: 100%; background: var(--sidebar); padding: 20px; transition: .4s; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
-        #sidebar.open { left: 0; }
+        .light-mode { --bg: #f7f7f8; --text: #202123; --sidebar: #ffffff; --card: #e5e5e5; --border: rgba(0,0,0,0.1); --user-bg: #ffffff; }
         
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-        .msg-container { max-width: 85%; animation: fadeIn 0.3s ease; }
-        .user { align-self: flex-end; } .bot { align-self: flex-start; }
-        .bubble { padding: 12px 18px; border-radius: 18px; font-size: 15px; line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.1); white-space: pre-wrap; word-wrap: break-word; }
-        .user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 2px; }
-        .bot .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; }
 
-        .mode-indicator { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 4px; font-weight: bold; }
-        .typing { font-size: 12px; color: var(--primary); margin: 10px 20px; display: none; }
+        /* Login Screen */
+        #login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: var(--sidebar); padding: 30px; border-radius: 20px; text-align: center; border: 1px solid var(--border); width: 90%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        header { width: 100%; height: 60px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; z-index: 100; justify-content: space-between; flex-shrink: 0; }
+        .title { font-weight: 600; font-size: 1.1rem; color: var(--primary); }
+
+        /* Chat Area */
+        #chat-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; }
+        .row { width: 100%; padding: 20px 15px; display: flex; gap: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; }
+        .row.user { background: var(--bg); }
+        .row.bot { background: var(--card); }
+        
+        .avatar { width: 30px; height: 30px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; color: white; }
+        .user .avatar { background: #5436da; }
+        .bot .avatar { background: var(--primary); }
+
+        .content { flex: 1; font-size: 15px; line-height: 1.6; word-wrap: break-word; overflow: hidden; }
+        
+        /* Action Buttons */
+        .actions { display: flex; gap: 12px; margin-top: 10px; opacity: 0.6; }
+        .act-btn { background: none; border: none; color: var(--text); cursor: pointer; font-size: 12px; }
+
+        /* Popups & Menus */
+        #settings-menu { position: fixed; top: 0; left: -100%; width: 80%; max-width: 280px; height: 100%; background: var(--sidebar); z-index: 1500; padding: 25px; transition: 0.3s; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+        #settings-menu.open { left: 0; }
+        #menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; }
+        
+        #category-popup { display: none; position: fixed; bottom: 85px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 15px; padding: 12px; z-index: 150; width: 220px; }
+        .menu-btn { width: 100%; background: rgba(255,255,255,0.05); border: none; color: white; padding: 10px; text-align: left; margin-bottom: 5px; border-radius: 8px; font-size: 14px; }
 
         /* Input Area */
-        .input-area { padding: 20px; background: var(--bg); border-top: 1px solid var(--border); }
-        .input-wrapper { max-width: 900px; margin: 0 auto; background: var(--card); border-radius: 30px; display: flex; align-items: center; padding: 8px 15px; border: 1px solid var(--border); }
-        input { flex: 1; background: none; border: none; color: var(--text); font-size: 16px; outline: none; padding: 10px; }
-        
-        .btn { background: none; border: none; cursor: pointer; color: var(--text); padding: 8px; font-size: 20px; transition: 0.2s; }
-        #mic.active { color: #ff4b2b; animation: pulse 1s infinite; }
+        .footer { width: 100%; padding: 10px 15px 30px; background: var(--bg); }
+        .input-container { max-width: 800px; margin: 0 auto; background: var(--user-bg); border-radius: 12px; display: flex; align-items: flex-end; padding: 10px; border: 1px solid var(--border); }
+        textarea { flex: 1; background: none; border: none; color: var(--text); outline: none; font-size: 16px; resize: none; max-height: 150px; padding: 5px; line-height: 20px; }
+        .icon-btn { background: none; border: none; color: #8e8ea0; font-size: 22px; padding: 5px; cursor: pointer; }
+
+        .wiki-img { width: 100%; max-width: 300px; border-radius: 10px; margin: 10px 0; display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-<div id="sidebar" class="btn">
-    <h2 style="color: var(--primary); margin-bottom: 20px;">Veda Ultra</h2>
-    <p style="font-size: 12px; opacity: 0.7; margin-bottom: 20px;">Category Selector:</p>
-    <button class="btn" style="width:100%; text-align:left; font-size:16px; margin-bottom:10px;" onclick="setCategory('auto')">🤖 Auto Mode (AI)</button>
-    <button class="btn" style="width:100%; text-align:left; font-size:16px; margin-bottom:10px;" onclick="setCategory('study')">📚 Study Mode</button>
-    <button class="btn" style="width:100%; text-align:left; font-size:16px; margin-bottom:10px;" onclick="setCategory('anime')">⛩️ Anime Mode</button>
-    <hr style="border: 0.5px solid var(--border); margin: 20px 0;">
-    <button class="btn" style="font-size:14px;" onclick="clearChat()">🗑 Clear History</button>
+<div id="login-overlay">
+    <div class="login-card">
+        <h2 style="color:var(--primary); margin-bottom:15px;">Veda AI Pro</h2>
+        <input type="text" id="user-name-in" placeholder="Aapka Naam..." style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); background:#1a1b1e; color:white; margin-bottom:15px;">
+        <button onclick="doLogin()" style="width:100%; padding:12px; background:var(--primary); border:none; color:white; border-radius:8px; font-weight:bold;">Launch Bot</button>
+    </div>
 </div>
 
+<div id="menu-overlay" onclick="toggleMenu(false)"></div>
+
 <header>
-    <div style="display:flex; align-items:center; gap:15px;">
-        <span onclick="document.getElementById('sidebar').classList.toggle('open')" style="cursor:pointer; font-size:24px;">☰</span>
-        <div style="line-height:1">
-            <b style="color:var(--primary)">VEDA AI</b><br>
-            <small id="current-mode" style="font-size:9px; opacity:0.6">MODE: AUTO</small>
-        </div>
-    </div>
-    <button onclick="document.body.classList.toggle('light-theme')" class="btn">🌓</button>
+    <button onclick="toggleMenu(true)" style="background:none; border:none; color:var(--text); font-size:24px;">☰</button>
+    <div class="title" id="veda-title">VEDA AI</div>
+    <div id="header-user" style="font-size:10px; color:#8e8ea0; text-align:right;">User<br>VEDA-0000</div>
 </header>
 
 <div id="chat-box"></div>
-<div id="typing" class="typing">Veda is searching sources...</div>
 
-<div class="input-area">
-    <div class="input-wrapper">
-        <button id="mic" class="btn">🎤</button>
-        <input type="text" id="user-input" placeholder="Ask anything..." autocomplete="off">
-        <button onclick="handleSend()" class="btn" style="color: var(--primary)">➤</button>
-    </div>
-    <p>Created by Thoughts Sounds</p>
+<div id="category-popup">
+    <button class="menu-btn" onclick="setMode('Auto')">✨ Auto Mode</button>
+    <button class="menu-btn" onclick="setMode('Wikipedia')">🌐 Wikipedia</button>
+    <button class="menu-btn" onclick="setMode('Image')">🎨 AI Image Mode</button>
+    <hr style="opacity:0.1; margin:8px 0;">
+    <label style="font-size:12px; color:#ff0055; cursor:pointer; display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="advanceModeToggle" onchange="toggleAdvanceTheme()"> PRO LLM (Vercel)
+    </label>
 </div>
 
-<script src="responses.js"></script>
-<script src="study.js"></script>
-<script src="about.js"></script>
-<script src="anime.js"></script>
-<script src="core.js"></script>
+<div id="settings-menu">
+    <h3 style="color:var(--primary); margin-bottom:20px;">Settings</h3>
+    <button class="menu-btn" onclick="toggleLightMode()">🌓 Light/Dark Mode</button>
+    <button class="menu-btn" onclick="location.reload()">🔄 Reset Chat</button>
+    <button class="menu-btn" onclick="clearBrain()" style="color:#ef4444;">🧠 Clear Memory</button>
+</div>
+
+<div class="footer">
+    <div class="input-container">
+        <button class="icon-btn" onclick="toggleCategory()">➕</button>
+        <textarea id="user-in" placeholder="Ask Veda anything..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <button class="icon-btn" style="color:var(--primary)" onclick="handleSend()">⬆</button>
+    </div>
+</div>
 
 <script>
-// ===== CONFIGURATION =====
-const API_KEY = "PASTE_YOUR_GEMINI_KEY_HERE";
-let currentCategory = "auto";
+let userName = localStorage.getItem('vedaUserName') || "User";
+let currentMode = "Auto";
 
-const chatBox = document.getElementById('chat-box');
-const typingInd = document.getElementById('typing');
-const userInput = document.getElementById('user-input');
+// --- 1. Login Logic ---
+function doLogin() {
+    const name = document.getElementById('user-name-in').value.trim();
+    if(name) {
+        userName = name;
+        localStorage.setItem('vedaUserName', name);
+        document.getElementById('login-overlay').style.display = 'none';
+        updateUI();
+        addMessage(`Namaste **${userName}**! Main Veda AI hoon. Main aapki kya madad kar sakta hoon?`, 'bot');
+    }
+}
+if(localStorage.getItem('vedaUserName')) document.getElementById('login-overlay').style.display = 'none';
 
-// ===== AI CALCULATOR LOGIC =====
-const AICalculator = {
-    check: (q) => /[0-9+\-*/().]{3,}/.test(q),
-    solve: (q) => {
+// --- 2. AI Logic ---
+async function processLogic(q) {
+    const query = q.toLowerCase().trim();
+    const isAdv = document.getElementById('advanceModeToggle').checked;
+
+    // A. Identity
+    if(query.includes("owner") || query.includes("kisne banaya")) return "Mujhe **Thoughts Sounds** ne banaya hai.";
+
+    // B. Image Generation
+    if(query.includes("image") || query.includes("photo") || currentMode === "Image") {
+        const p = query.replace(/image|photo|generate|dikhao/g, "").trim();
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p || "nature")}?width=800&height=800&nologo=true`;
+        return `Ye rahi aapki image: <br><img src="${url}" class="wiki-img">`;
+    }
+
+    // C. Wikipedia
+    if(query.length > 3) {
         try {
-            // Basic math solver
-            let result = eval(q.replace(/[^-()\d/*+.]/g, ''));
-            return `AI Calculator: ${q} = **${result}** 🔢`;
-        } catch(e) { return null; }
+            const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+            const data = await res.json();
+            if(data.extract) return (data.thumbnail ? `<img src="${data.thumbnail.source}" class="wiki-img">` : "") + data.extract;
+        } catch(e) {}
     }
-};
 
-// ===== CATEGORY HANDLER =====
-function setCategory(cat) {
-    currentCategory = cat;
-    document.getElementById('current-mode').innerText = "MODE: " + cat.toUpperCase();
-    addMessage(`Veda has switched to **${cat.toUpperCase()}** mode.`, 'bot');
-    document.getElementById('sidebar').classList.remove('open');
+    return "Mujhe iska jawab nahi pata, par main seekh raha hoon!";
 }
 
-// ===== MAIN SEND LOGIC =====
+// --- 3. UI Logic ---
 async function handleSend() {
-    const query = userInput.value.trim();
-    if(!query) return;
+    const inp = document.getElementById('user-in');
+    const val = inp.value.trim();
+    if(!val) return;
 
-    addMessage(query, 'user');
-    userInput.value = "";
-    typingInd.style.display = "block";
+    addMessage(val, 'user');
+    inp.value = "";
+    inp.style.height = 'auto';
 
-    let response = "";
+    const id = "bot-" + Date.now();
+    addMessage("Searching...", "bot", id);
 
-    async function handleSend() {
-    let input = document.getElementById('user-input').value;
-    if(!input) return;
-
-    addMessage(input, 'user'); // User message
-    document.getElementById('user-input').value = "";
-
-    // Brain Process
-    let result = await VedaCore.brain(input);
-    
-    // Bot Text Response
-    addMessage(result.text, 'bot');
-
-    // Bot Image Response (Agar Wiki se image mili)
-    if (result.image) {
-        let chatBox = document.getElementById('chat-box');
-        let imgDiv = document.createElement('div');
-        imgDiv.className = "msg-container bot";
-        imgDiv.innerHTML = `<img src="${result.image}" style="width:180px; border-radius:10px; margin: 5px 0; border: 2px solid var(--primary);">`;
-        chatBox.appendChild(imgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
+    const reply = await processLogic(val);
+    updateBotMsg(id, reply);
 }
 
-// ===== EXTERNAL API CALLS =====
-async function fetchWiki(q) {
-    try {
-        const res = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
-        const data = await res.json();
-        return data.extract ? `Wikipedia Info: ${data.extract}` : "";
-    } catch(e) { return ""; }
+function addMessage(txt, role, id=null) {
+    const box = document.getElementById('chat-box');
+    const row = document.createElement('div');
+    row.className = `row ${role}`;
+    if(id) row.id = id;
+
+    row.innerHTML = `
+        <div class="avatar">${role === 'user' ? 'U' : 'V'}</div>
+        <div class="content">
+            <div class="txt-body">${txt}</div>
+            ${role === 'bot' ? `<div class="actions">
+                <button class="act-btn" onclick="speak('${id}')">🔊 Speak</button>
+                <button class="act-btn" onclick="copy('${id}')">📋 Copy</button>
+            </div>` : ''}
+        </div>`;
+    box.appendChild(row);
+    box.scrollTop = box.scrollHeight;
 }
 
-async function getGeminiAI(prompt, context) {
-    try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: `Context: ${context}\nCategory: ${currentCategory}\nUser: ${prompt}` }] }]
-            })
-        });
-        const data = await res.json();
-        return data.candidates[0].content.parts[0].text;
-    } catch(e) { return "Server issue. Please check your API key."; }
+function updateBotMsg(id, txt) {
+    document.getElementById(id).querySelector('.txt-body').innerHTML = txt;
 }
 
-// ===== UI UTILS =====
-function addMessage(text, side) {
-    const div = document.createElement('div');
-    div.className = `msg-container ${side}`;
-    div.innerHTML = `<div class="bubble">${text}</div>`;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+// --- 4. Extra Features ---
+function toggleMenu(s) { 
+    document.getElementById('settings-menu').classList.toggle('open', s);
+    document.getElementById('menu-overlay').style.display = s ? 'block' : 'none';
 }
-
-function typeEffect(text) {
-    const div = document.createElement('div');
-    div.className = "msg-container bot";
-    const bubble = document.createElement('div');
-    bubble.className = "bubble";
-    div.appendChild(bubble);
-    chatBox.appendChild(div);
-
-    let i = 0;
-    let timer = setInterval(() => {
-        bubble.innerText = text.substring(0, i);
-        if(i++ >= text.length) { clearInterval(timer); chatBox.scrollTop = chatBox.scrollHeight; }
-    }, 5);
+function toggleCategory() {
+    const p = document.getElementById('category-popup');
+    p.style.display = (p.style.display === 'block') ? 'none' : 'block';
 }
-
-function clearChat() { chatBox.innerHTML = ""; }
-
-// ===== VOICE INPUT =====
-const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-rec.lang = 'hi-IN';
-document.getElementById('mic').onclick = () => rec.start();
-rec.onstart = () => document.getElementById('mic').classList.add('active');
-rec.onend = () => document.getElementById('mic').classList.remove('active');
-rec.onresult = (e) => { userInput.value = e.results[0][0].transcript; handleSend(); };
-
-userInput.onkeypress = (e) => { if(e.key === 'Enter') handleSend(); };
+function toggleLightMode() { document.body.classList.toggle('light-mode'); }
+function setMode(m) { currentMode = m; toggleCategory(); addMessage(`Mode changed to: ${m}`, 'bot'); }
+function updateUI() { document.getElementById('header-user').innerHTML = `${userName}<br>VEDA-7777`; }
+function speak(id) {
+    const t = document.getElementById(id).querySelector('.txt-body').innerText;
+    const u = new SpeechSynthesisUtterance(t); u.lang = 'hi-IN'; window.speechSynthesis.speak(u);
+}
+function copy(id) {
+    const t = document.getElementById(id).querySelector('.txt-body').innerText;
+    navigator.clipboard.writeText(t); alert("Copied!");
+}
+function toggleAdvanceTheme() {
+    const isAdv = document.getElementById('advanceModeToggle').checked;
+    document.getElementById('veda-title').innerText = isAdv ? "VEDA PRO 🚀" : "VEDA AI";
+}
 </script>
 </body>
 </html>
