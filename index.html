@@ -95,6 +95,7 @@
     <button class="menu-btn" onclick="setMode('Study')">📚 Study Expert</button>
     <button class="menu-btn" onclick="setMode('Anime')">⛩️ Anime Fan</button>
     <button class="menu-btn" onclick="setMode('Image')">🎨 AI Image Mode</button>
+    <button class="menu-btn" onclick="setMode('Google search)">🔍 Google search</button>
     <hr style="opacity:0.1; margin:10px 0;">
     <label style="display: flex; align-items: center; gap: 10px; color: #ff0055; font-size: 12px; cursor: pointer;">
         <input type="checkbox" id="advanceModeToggle" onchange="toggleAdvanceTheme()"> 🚀 PRO LLM (Vercel)
@@ -209,11 +210,17 @@ async function processLogic(q) {
             return `🌐 **Global Search Result:**<br>${img}<br>**${eData.title}**: ${eData.extract}<br><br><small>Source: Wikipedia Global</small>`;
         }
 
-        // C. Last Resort: DuckDuckGo (Quick Facts)
+        // C. Resort: DuckDuckGo (Quick Facts)
         const ddg = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`);
         const dData = await ddg.json();
         if (dData.AbstractText) {
             return `🔍 **Quick Info:**<br><br>${dData.AbstractText}<br><br><small>Source: DDG Search</small>`;
+        }
+
+        const Googlesearch = await fetch(`https://api.Google.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`);
+        const dData = await google.json();
+        if (dData.AbstractText) {
+            return `🔍 **Quick Info:**<br><br>${dData.AbstractText}<br><br><small>Source: Google Search</small>`;
         }
 
     } catch (e) {
@@ -251,10 +258,11 @@ function addMsg(txt, role, id=null) {
             ${role === 'bot' ? `<div class="actions">
                 <button class="act-btn" onclick="speak('${id}')">🔊 Speak</button>
                 <button class="act-btn" onclick="copy('${id}')">📋 Copy</button>
+                <button class="act-btn" onclick="response('${id}')">👍🏻</button>
             </div>` : ''}
         </div>`;
     box.appendChild(row);
-    box.scrollTop = box.scrollHeight;
+ box.scrollTop = box.scrollHeight;
 }
 
 // --- FEATURES ---
