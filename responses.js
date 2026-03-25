@@ -1,3 +1,27 @@
+window.vedaResponses = {
+    // Identity & Help
+    "hi": "Namaste dost! Main Veda AI hoon, Thoughts Sounds ka banaya hua smart assistant. 😎",
+    "hello": "Hey! Kaise ho? Aaj kya naya seekhna hai?",
+    "about you": "Main Veda AI Pro hoon. Main aapke sawalon ke jawab de sakta hoon, images bana sakta hoon aur internet se jankari nikal sakta hoon.",
+    
+    // Places & General Knowledge
+    "indore": "Indore, Madhya Pradesh ka sabse bada shehar hai aur Bharat ka sabse saaf shehar (Cleanest City) bhi! 🏙️",
+    "mumbai": "Mumbai, Bharat ki arthik rajdhani (Financial Capital) hai. Isse 'Sapno ka Shehar' bhi kaha jata hai. 🌊",
+    "bollywood": "Bollywood, Mumbai mein sthit Hindi film industry hai, jo duniya ki sabse badi film industries mein se ek hai. 🎬",
+    "cbse": "CBSE (Central Board of Secondary Education) Bharat ka ek national level board hai jo schools ke liye exams aur syllabus decide karta hai.",
+    "ncr": "NCR ka matlab hai National Capital Region, ismein Delhi ke saath Gurgaon, Noida, aur Ghaziabad jaise shehar aate hain.",
+    
+    // Emotions & Feelings (Acha feel karane ke liye) ❤️
+    "mujhe acha feel karao": "Arre dost, udas mat ho! Yaad rakho ki aap unique ho aur aapki mehnat ek din rang layegi. Ek gehri saans lo aur muskuraiye! 😊",
+    "feeling low": "Koi baat nahi, life mein ups and downs aate rehte hain. Thoda music suno ya kisi dost se baat karo, sab theek ho jayega! 🌈",
+    "bore ho raha hoon": "Bore mat ho! Chalo koi cool 'Anime' ki baat karte hain ya mujhse koi photo banwa lo?",
+    
+    // System & Limits
+    "your limits": "Meri limit bas wahan khatam hoti hai jahan aapki imagination ruk jati hai! Waise main abhi seekh raha hoon, toh kabhi-kabhi galati kar sakta hoon. 🤖",
+    "google": "Google duniya ka sabse bada search engine hai, par main aapka personal Veda AI hoon! 😉"
+};
+
+
 const vedaDatabase = {
     // --- IDENTITY & CREATOR ---
     "kaun ho": "Main Veda AI hoon, aapka personal smart assistant. Mujhe Thoughts Sounds ne banaya hai.",
