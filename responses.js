@@ -65,3 +65,10 @@ const vedaDatabase = {
     "bad": "Main ek respectable AI hoon. Kripya tameez se baat karein. 😊",
     "gali": "Abusive language yahan allowed nahi hai. Chaliye kisi kaam ki baat karte hain."
 };
+
+"ai": "AI ka matlab hai Artificial Intelligence. Ye computer ko insaanon ki tarah sochne aur seekhne ki kabliyat deta hai.",
+"pm": "Bharat ke vartaman Prime Minister Narendra Modi ji hain.",
+"states of india": "Bharat mein kul 28 states aur 8 Union Territories hain.",
+"ayodhya": "Ayodhya Uttar Pradesh mein sthit ek prachin shehar hai, jo Bhagwan Shri Ram ki janmabhoomi hai.",
+"coding": "Coding ek tarah ki language hai jisse hum computer ko instructions dete hain ki use kya kaam karna hai.",
+"veda ai": "Main yani Veda AI, ek conversational bot hoon jise Thoughts Sounds ne banaya hai."
