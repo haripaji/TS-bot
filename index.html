@@ -247,16 +247,29 @@
 
     // --- MAIN CHAT ENGINE ---
     async function sendMessage() {
-        const input = document.getElementById('main-input');
-        const text = input.value.trim();
-        if(!text) return;
+    const input = document.getElementById('main-input');
+    const text = input.value.trim();
+    if(!text) return;
 
-        createMsg(text, 'user');
-        input.value = "";
-        input.style.height = 'auto';
+    createMsg(text, 'user');
+    input.value = "";
+    input.style.height = 'auto';
 
-        const box = document.getElementById('chat-box');
+    setTimeout(async () => {
+        let response = "";
         
+        // ... (Aapka purana Logic: if/else ya Database check) ...
+        // Maan lijiye response generate ho gaya:
+        response = "Ye bot ka jawab hai!"; 
+
+        createMsg(response, 'bot'); 
+
+        //  YAHAN YE LINE ADD KAREIN 
+        saveMessageToCloud(text, response); 
+
+    }, 500);
+}
+
         // Processing Delay logic
         setTimeout(async () => {
             let response = "";
@@ -434,6 +447,7 @@
     }
 
     // Helper Toast Notification
+
     function showToast(msg) {
         const toast = document.createElement('div');
         toast.style = "position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#3c4043; color:white; padding:8px 16px; border-radius:20px; font-size:13px; z-index:10005;";
@@ -441,23 +455,24 @@
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2500);
     }
-    // --- Yahan se Copy Karein ---
-async function saveMessageToCloud(uText, bText) {
-    if(!user || !user.email) return;
 
-    try {
-        await db.collection("chats").add({
-            user_email: user.email,
-            user_name: user.name,
-            question: uText,
-            answer: bText,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        console.log("Chat saved to cloud! 🚀");
-    } catch (error) {
-        console.error("Cloud Error:", error);
+    // Bas ek baar ye function kaafi hai
+    async function saveMessageToCloud(uText, bText) {
+        if(!user || !user.email) return;
+        try {
+            await db.collection("chats").add({
+                user_email: user.email,
+                user_name: user.name,
+                question: uText,
+                answer: bText,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("Chat saved! 🚀");
+        } catch (error) {
+            console.error("Cloud Error:", error);
+        }
     }
-}
+
 
 </script>
 </body>
