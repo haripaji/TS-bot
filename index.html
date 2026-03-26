@@ -3,110 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Veda AI bot | Thoughts Sounds</title>
+    <title>Veda AI Pro | Thoughts Sounds</title>
     
-    <script src="core.js"></script>
-    <script src="study.js"></script>
-    <script src="anime.js"></script>
-    <script src="responses.js"></script> 
-    <script src="about.js"></script>
+    <!-- External Scripts Fallback -->
+    <script>
+        window.vedaCore = window.vedaCore || {}; 
+        window.vedaStudy = window.vedaStudy || {}; 
+        window.vedaAnime = window.vedaAnime || {}; 
+        window.vedaResponses = window.vedaResponses || {};
+    </script>
+    <script src="core.js" onerror="console.log('core.js not found')"></script>
+    <script src="study.js" onerror="console.log('study.js not found')"></script>
+    <script src="anime.js" onerror="console.log('anime.js not found')"></script>
+    <script src="responses.js" onerror="console.log('responses.js not found')"></script> 
+    <script src="about.js" onerror="console.log('about.js not found')"></script>
     
     <style>
         :root { 
             --primary: #10a37f; --bg: #343541; --sidebar: #202123; 
             --text: #ececf1; --border: rgba(255,255,255,0.1); --card: #444654; 
-            --user-msg: #40414f;
+            --user-msg: #40414f; --hover: rgba(255,255,255,0.05);
         }
-        .light-mode { --bg: #f7f7f8; --text: #202123; --sidebar: #ffffff; --card: #e5e5e5; --border: rgba(0,0,0,0.1); --user-msg: #ffffff; }
+        .light-mode { 
+            --bg: #f7f7f8; --text: #202123; --sidebar: #ffffff; 
+            --card: #e5e5e5; --border: rgba(0,0,0,0.1); --user-msg: #ffffff; 
+            --hover: rgba(0,0,0,0.05);
+        }
         
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; }
+        html, body { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; transition: background 0.3s, color 0.3s; }
 
         /* Premium Login */
         #login-overlay { position: fixed; inset: 0; background: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1600') no-repeat center/cover; z-index: 5000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .login-card { background: rgba(32, 33, 35, 0.9); padding: 40px 30px; border-radius: 25px; text-align: center; border: 1px solid var(--border); width: 90%; max-width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(15px); }
         .login-card h2 { background: linear-gradient(45deg, #10a37f, #00ffcc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; font-size: 2.2rem; font-weight: 800; }
+        .login-input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: rgba(255,255,255,0.1); color: white; margin-bottom: 20px; text-align: center; outline: none; font-size: 16px; }
+        .login-btn { width: 100%; padding: 15px; background: var(--primary); border: none; color: white; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .login-btn:hover { background: #0e906f; transform: translateY(-2px); }
 
         /* UI Elements */
-        header { width: 100%; height: 60px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; justify-content: space-between; flex-shrink: 0; }
+        header { width: 100%; height: 60px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 15px; justify-content: space-between; flex-shrink: 0; z-index: 10; }
         .title { font-weight: bold; color: var(--primary); font-size: 1.2rem; letter-spacing: 1px; }
 
-        #settings-menu { position: fixed; top: 0; left: -100%; width: 80%; max-width: 280px; height: 100%; background: var(--sidebar); z-index: 3000; padding: 25px; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+        /* UPGRADED PRO SETTINGS MENU */
+        #settings-menu { position: fixed; top: 0; left: -100%; width: 85%; max-width: 320px; height: 100%; background: rgba(32, 33, 35, 0.95); backdrop-filter: blur(20px); z-index: 3000; transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+        .light-mode #settings-menu { background: rgba(255, 255, 255, 0.95); }
         #settings-menu.open { left: 0; }
-        #menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2500; }
+        #menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 2500; }
+        
+        .settings-header { padding: 25px 20px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .settings-header h3 { color: var(--text); font-size: 1.2rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+        .close-settings { background: none; border: none; color: #8e8ea0; font-size: 28px; cursor: pointer; line-height: 1; padding: 0; }
+        
+        .settings-content { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+        .settings-group { padding: 15px 20px; border-bottom: 1px solid rgba(142, 142, 160, 0.1); }
+        .settings-label { font-size: 11px; text-transform: uppercase; color: #8e8ea0; margin-bottom: 12px; font-weight: 700; letter-spacing: 0.8px; }
+        
+        .settings-item { width: 100%; background: transparent; border: none; color: var(--text); padding: 10px 0; text-align: left; font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s ease; border-radius: 8px; }
+        .settings-item:hover { color: var(--primary); padding-left: 8px; background: var(--hover); }
+        .settings-item span { font-size: 18px; width: 24px; text-align: center; }
 
+        /* Chat UI */
         #chat-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; }
         .row { width: 100%; padding: 22px 15px; display: flex; gap: 15px; border-bottom: 1px solid rgba(0,0,0,0.03); animation: fadeIn 0.3s ease; }
         .row.user { background: var(--bg); }
         .row.bot { background: var(--card); }
         
-        .avatar { width: 35px; height: 35px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
-        .user .avatar { background: linear-gradient(45deg, #5436da, #8e44ad); }
-        .bot .avatar { background: linear-gradient(45deg, #10a37f, #1abc9c); box-shadow: 0 0 10px rgba(16, 163, 127, 0.4); }
+        .avatar { width: 35px; height: 35px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 14px; }
+        .user .avatar { background: linear-gradient(135deg, #5436da, #8e44ad); }
+        .bot .avatar { background: linear-gradient(135deg, #10a37f, #1abc9c); box-shadow: 0 4px 10px rgba(16, 163, 127, 0.3); }
         .content { flex: 1; font-size: 15.5px; line-height: 1.6; word-wrap: break-word; }
 
-        /* Buttons & Input */
         .actions { display: flex; gap: 10px; margin-top: 12px; }
-        .act-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 11px; }
+        .act-btn { background: var(--hover); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .act-btn:hover { background: rgba(142, 142, 160, 0.2); }
         
-        .footer { width: 100%; padding: 10px 15px 35px; background: var(--bg); }
-        .input-container { max-width: 800px; margin: 0 auto; background: var(--user-msg); border-radius: 15px; display: flex; align-items: flex-end; padding: 10px 15px; border: 1px solid var(--border); }
-        textarea { flex: 1; background: none; border: none; color: var(--text); outline: none; font-size: 16px; resize: none; max-height: 150px; padding: 5px; }
-        .ui-btn { background: none; border: none; color: #8e8ea0; font-size: 24px; padding: 0 8px; cursor: pointer; }
+        .footer { width: 100%; padding: 10px 15px 25px; background: var(--bg); border-top: 1px solid var(--border); }
+        .input-container { max-width: 800px; margin: 0 auto; background: var(--user-msg); border-radius: 18px; display: flex; align-items: flex-end; padding: 10px 15px; border: 1px solid var(--border); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        textarea { flex: 1; background: none; border: none; color: var(--text); outline: none; font-size: 16px; resize: none; max-height: 150px; padding: 5px; font-family: inherit; }
+        .ui-btn { background: none; border: none; color: #8e8ea0; font-size: 22px; padding: 0 8px; cursor: pointer; transition: 0.2s; }
+        .ui-btn:hover { color: var(--primary); }
 
-        #category-popup { display: none; position: fixed; bottom: 95px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 18px; padding: 15px; z-index: 1500; width: 240px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-        .menu-btn { width: 100%; background: rgba(255,255,255,0.05); border: none; color: white; padding: 12px; text-align: left; margin-bottom: 8px; border-radius: 10px; cursor: pointer; }
+        #category-popup { display: none; position: fixed; bottom: 85px; left: 15px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 16px; padding: 15px; z-index: 1500; width: 240px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+        .cat-btn { width: 100%; background: var(--hover); border: none; color: var(--text); padding: 12px; text-align: left; margin-bottom: 8px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .cat-btn:hover { background: rgba(142, 142, 160, 0.2); }
 
-        .ai-media { width: 100%; max-width: 450px; border-radius: 15px; margin: 15px 0; border: 1px solid var(--border); display: block; }
+        .ai-media { width: 100%; max-width: 400px; border-radius: 12px; margin: 15px 0; border: 1px solid var(--border); display: block; }
+        
+        /* SMART LIVE SEARCH WINDOW (MINI WINDOW) */
+        #google-mini-window { display:none; position: fixed; top: 10%; left: 5%; width: 90%; height: 80%; background: rgba(32, 33, 35, 0.98); border-radius: 20px; z-index: 6000; box-shadow: 0 25px 60px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.15); overflow: hidden; backdrop-filter: blur(20px); transition: all 0.3s ease; }
+        .light-mode #google-mini-window { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(0,0,0,0.15); }
+        .mini-win-header { padding: 12px 18px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body onclick="closeAll()">
 
+<!-- Login UI -->
 <div id="login-overlay">
     <div class="login-card">
         <h2>Veda AI Pro</h2>
-        <input type="text" id="user-name-in" placeholder="Aapka Naam..." style="width:100%; padding:15px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.1); color:white; margin-bottom:20px; text-align: center; outline: none;">
-        <button onclick="doLogin()" style="width:100%; padding:15px; background:var(--primary); border:none; color:white; border-radius:12px; font-weight:bold; cursor:pointer;">Launch Veda</button>
-        <p style="color: #8e8ea0; font-size: 11px; margin-top: 15px;">By Thoughts Sounds</p>
+        <input type="text" id="user-name-in" class="login-input" placeholder="Aapka Naam..." autocomplete="off">
+        <button onclick="doLogin()" class="login-btn">Launch Veda</button>
+        <p style="color: #8e8ea0; font-size: 12px; margin-top: 20px;">Powered by Thoughts Sounds</p>
     </div>
 </div>
 
 <div id="menu-overlay" onclick="toggleMenu(false)"></div>
 
+<!-- UPGRADED SETTINGS SLIDER -->
 <div id="settings-menu" onclick="event.stopPropagation()">
-    <h3 style="color:var(--primary); margin-bottom:20px;">SETTINGS</h3>
-    <button class="menu-btn" onclick="toggleLightMode()">🌓 Dark / Light Mode</button>
-    <button class="menu-btn" onclick="downloadChat()">📥 Download Chat History</button>
-    <button class="menu-btn" onclick="location.reload()">🔄 Restart Bot</button>
-    <button class="menu-btn" onclick="clearBrain()" style="color:#ef4444;">🧠 Wipe Memory</button>
+    <div class="settings-header">
+        <h3>⚙️ Settings</h3>
+        <button class="close-settings" onclick="toggleMenu(false)">&times;</button>
+    </div>
+    
+    <div class="settings-content">
+        <div class="settings-group">
+            <div class="settings-label">Appearance</div>
+            <button class="settings-item" onclick="toggleLightMode()"><span>🌓</span> Theme Toggle</button>
+        </div>
+        
+        <div class="settings-group">
+            <div class="settings-label">Data & Memory</div>
+            <button class="settings-item" onclick="downloadChat()"><span>📥</span> Export Chat History</button>
+            <button class="settings-item" onclick="clearBrain()" style="color:#ef4444;"><span>🧠</span> Wipe AI Memory</button>
+        </div>
+        
+        <div class="settings-group">
+            <div class="settings-label">System Operations</div>
+            <button class="settings-item" onclick="location.reload()"><span>🔄</span> Reboot System</button>
+        </div>
+
+        <div class="settings-group" style="border-bottom: none; opacity: 0.6; margin-top: 20px;">
+            <div style="font-size: 11px; text-align: center; color: var(--text);">
+                Veda AI Pro v2.0<br>Created by Thoughts Sounds
+            </div>
+        </div>
+    </div>
 </div>
 
 <header>
     <button class="ui-btn" onclick="event.stopPropagation(); toggleMenu(true)" style="color:var(--text)">☰</button>
     <div class="title" id="veda-title">VEDA AI PRO</div>
-    <div id="header-user" style="font-size:10px; color:#8e8ea0;">User<br>VEDA-7777</div>
+    <div id="header-user" style="font-size:11px; color:#8e8ea0; text-align: right; line-height: 1.2;">User<br>VEDA-777</div>
 </header>
 
 <div id="chat-box"></div>
 
+<!-- Category Popup -->
 <div id="category-popup" onclick="event.stopPropagation()">
-    <button class="menu-btn" onclick="setMode('Auto')">✨ Auto Mode</button>
-    <button class="menu-btn" onclick="setMode('Study')">📚 Study Expert</button>
-    <button class="menu-btn" onclick="setMode('Anime')">⛩️ Anime Fan</button>
-    <button class="menu-btn" onclick="setMode('Image')">🎨 AI Image Mode</button>
-    <button class="menu-btn" onclick="setMode('Google search)">🔍 Google search</button>
-    <hr style="opacity:0.1; margin:10px 0;">
-    <label style="display: flex; align-items: center; gap: 10px; color: #ff0055; font-size: 12px; cursor: pointer;">
+    <button class="cat-btn" onclick="setMode('Auto')">✨ Auto Mode</button>
+    <button class="cat-btn" onclick="setMode('Study')">📚 Study Expert</button>
+    <button class="cat-btn" onclick="setMode('Anime')">⛩️ Anime Fan</button>
+    <button class="cat-btn" onclick="setMode('Image')">🎨 AI Image Mode</button>
+    <button class="cat-btn" onclick="setMode('Google Search')">🔍 Live Search</button>
+    <hr style="opacity:0.1; margin:12px 0; border: 1px solid var(--text);">
+    <label style="display: flex; align-items: center; gap: 10px; color: #ff0055; font-size: 13px; cursor: pointer; padding: 5px;">
         <input type="checkbox" id="advanceModeToggle" onchange="toggleAdvanceTheme()"> 🚀 PRO LLM (Vercel)
     </label>
+</div>
+
+<!-- SMART MINI WINDOW (FALLBACK) -->
+<div id="google-mini-window">
+    <div class="mini-win-header">
+        <span style="font-size: 13px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+            🌐 VEDA LIVE SEARCH
+        </span>
+        <button onclick="closeGoogleWindow()" style="background: rgba(255, 77, 77, 0.2); border: 1px solid #ff4d4d; color: #ff4d4d; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s;">×</button>
+    </div>
+    <iframe src="" id="google-iframe" style="width: 100%; height: calc(100% - 53px); border: none; background: white;"></iframe>
 </div>
 
 <div class="footer">
     <div class="input-container">
         <button class="ui-btn" onclick="event.stopPropagation(); toggleCategory()">➕</button>
         <button class="ui-btn" id="mic-btn" onclick="event.stopPropagation(); startVoice()">🎤</button>
-        <textarea id="user-in" placeholder="Message Veda..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <textarea id="user-in" placeholder="Message Veda..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onkeypress="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleSend(); }"></textarea>
         <button class="ui-btn" style="color:var(--primary)" onclick="handleSend()">⬆</button>
     </div>
 </div>
@@ -124,7 +198,7 @@ function doLogin() {
         localStorage.setItem('vedaUserName', val);
         document.getElementById('login-overlay').style.display = 'none';
         updateUI();
-        addMsg(`Namaste **${userName}**! Main Veda AI Pro hoon. Kaise ho dost?`, 'bot');
+        addMsg(`Namaste **${userName}**! Main Veda AI Pro hoon. Aaj main aapki kaise madad kar sakta hoon?`, 'bot');
     }
 }
 if(localStorage.getItem('vedaUserName')) {
@@ -132,103 +206,90 @@ if(localStorage.getItem('vedaUserName')) {
     updateUI();
 }
 
-// --- CORE SMART LOGIC ---
+// --- SMART FALLBACK / SEARCH WINDOW ---
+function openGoogleSearch(query) {
+    const win = document.getElementById('google-mini-window');
+    const iframe = document.getElementById('google-iframe');
+    // Using Bing for iFrame compatibility (Bypasses Google's X-Frame-Options restriction)
+    iframe.src = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+    win.style.display = 'block';
+}
+
+function closeGoogleWindow() {
+    document.getElementById('google-mini-window').style.display = 'none';
+    document.getElementById('google-iframe').src = "";
+}
+
+// --- CORE LOGIC ---
 async function processLogic(q) {
     const query = q.toLowerCase().trim();
     const isAdv = document.getElementById('advanceModeToggle').checked;
 
-    // 1. AI Image Mode (Improved Trigger) 🎨
-    const imageKeywords = ["image", "photo", "pic", "generate", "create", "dikhao", "tasveer"];
+    // 1. Explicit Live Search Mode
+    if (currentMode === 'Google Search') {
+        openGoogleSearch(q);
+        return `Searching live for: **${q}**... Window khul rahi hai.`;
+    }
+
+    // 2. Image Mode
+    const imageKeywords = ["image", "photo", "pic", "generate", "create", "dikhao", "tasveer", "draw"];
     if(imageKeywords.some(k => query.includes(k)) || currentMode === 'Image') {
         let p = query;
         imageKeywords.forEach(k => p = p.replace(k, ""));
-        p = p.trim() || "beautiful scenery";
+        p = p.trim() || "beautiful futuristic scenery";
         const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true`;
         return `Lo bhai, ye raha result: <br><img src="${url}" class="ai-media">`;
     }
 
-    // 2. Local Database & Keyword Matching 📂
+    // 3. Local Database & External Scripts
     const db = { 
-        ...(window.vedaCore||{}), 
-        ...(window.vedaStudy||{}), 
-        ...(window.vedaAnime||{}), 
-        ...(window.vedaResponses||{}), 
-        ...(JSON.parse(localStorage.getItem('vedaMemory'))||{}) 
+        ...(window.vedaCore || {}), 
+        ...(window.vedaStudy || {}), 
+        ...(window.vedaAnime || {}), 
+        ...(window.vedaResponses || {}), 
+        ...(JSON.parse(localStorage.getItem('vedaMemory')) || {}) 
     };
 
-    // First check for exact match
     if(db[query]) return db[query];
+    for (let key in db) { if (query.includes(key) && key.length > 2) return db[key]; }
 
-    // Second: Check if query contains any key from database
-    for (let key in db) {
-        if (query.includes(key) && key.length > 2) {
-            return db[key];
-        }
-    }
-
-    // 3. Identity & Developer Check
     if(query.includes("owner") || query.includes("developer") || query.includes("thoughts sounds")) {
-        return "Mujhe **Thoughts Sounds** ne design kiya hai. Wo mere creator aur developer hain. 😎";
+        return "Mujhe **Thoughts Sounds** ne design aur develop kiya hai. 😎";
     }
 
-    // 4. Math Solver 🔢
+    // 4. Math Calculation
     if (/^[0-9+\-*/(). ]+$/.test(query) && query.length >= 3) {
-        try { return `Calculation result: **${eval(query)}**`; } catch(e) {}
+        try { return `Calculation Result: **${eval(query)}**`; } catch(e) {}
     }
 
-    // 5. PRO Mode (Vercel) 🚀
+    // 5. Pro Mode (Vercel API)
     if(isAdv) {
         try {
             const res = await fetch(VERCEL_URL, { 
-                method: "POST", 
-                headers: {"Content-Type":"application/json"}, 
+                method: "POST", headers: {"Content-Type":"application/json"}, 
                 body: JSON.stringify({ query: q, user: userName }) 
             });
             const data = await res.json();
             if(data.reply) return data.reply;
-        } catch(e) {}
+        } catch(e) { console.warn("Vercel API failed", e); }
     }
 
-
-        // 6. PRO Internet Search (Hindi + English Hybrid) 🌐
+    // 6. Wikipedia Check
     try {
-        // A. Pehle Hindi Wikipedia check karo (For Desi Context)
-        const hindiWiki = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-        const hData = await hindiWiki.json();
-        
-        if (hData.extract && hData.type !== "disambiguation" && hData.extract.length > 100) {
-            let img = hData.thumbnail ? `<img src="${hData.thumbnail.source}" class="ai-media">` : "";
-            return `🇮🇳 **Veda Hindi Search:**<br>${img}<br>${hData.extract}<br><br><small>Source: Wikipedia Hindi</small>`;
+        const wiki = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+        const d = await wiki.json();
+        if (d.extract && d.type !== "disambiguation") {
+            let img = d.thumbnail ? `<img src="${d.thumbnail.source}" style="max-width:200px; border-radius:8px; margin-bottom:10px;"><br>` : "";
+            return `📚 **Quick Info:**<br>${img}${d.extract}`;
         }
+    } catch (e) {}
 
-        // B. Agar Hindi mein nahi mila, toh English Wikipedia (Deep Knowledge)
-        const engWiki = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-        const eData = await engWiki.json();
-        
-        if (eData.extract && eData.type !== "disambiguation") {
-            let img = eData.thumbnail ? `<img src="${eData.thumbnail.source}" class="ai-media">` : "";
-            return `🌐 **Global Search Result:**<br>${img}<br>**${eData.title}**: ${eData.extract}<br><br><small>Source: Wikipedia Global</small>`;
-        }
+    // 7. SMART FALLBACK (Agar upar kuch na mile toh Mini Window kholo)
+    openGoogleSearch(q);
+    return `Mujhe apne database ya Wiki par iska exact jawab nahi mila. Main aapke liye **Live Search Window** khol raha hoon...`;
+}
 
-        // C. Resort: DuckDuckGo (Quick Facts)
-        const ddg = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`);
-        const dData = await ddg.json();
-        if (dData.AbstractText) {
-            return `🔍 **Quick Info:**<br><br>${dData.AbstractText}<br><br><small>Source: DDG Search</small>`;
-        }
-
-        const Googlesearch = await fetch(`https://api.Google.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`);
-        const dData = await google.json();
-        if (dData.AbstractText) {
-            return `🔍 **Quick Info:**<br><br>${dData.AbstractText}<br><br><small>Source: Google Search</small>`;
-        }
-
-    } catch (e) {
-        console.error("Search Error:", e);
-    }
-
-
-// --- UI LOGIC ---
+// --- UI HANDLERS ---
 async function handleSend() {
     const inp = document.getElementById('user-in');
     const val = inp.value.trim();
@@ -242,7 +303,8 @@ async function handleSend() {
     addMsg("Veda is thinking...", "bot", id);
 
     const reply = await processLogic(val);
-    document.getElementById(id).querySelector('.txt-body').innerHTML = reply;
+    const botMsg = document.getElementById(id);
+    if(botMsg) botMsg.querySelector('.txt-body').innerHTML = reply;
 }
 
 function addMsg(txt, role, id=null) {
@@ -252,55 +314,92 @@ function addMsg(txt, role, id=null) {
     if(id) row.id = id;
 
     row.innerHTML = `
-        <div class="avatar">${role === 'user' ? 'U' : 'V'}</div>
+        <div class="avatar">${role === 'user' ? '👤' : 'V'}</div>
         <div class="content">
             <div class="txt-body">${txt}</div>
             ${role === 'bot' ? `<div class="actions">
-                <button class="act-btn" onclick="speak('${id}')">🔊 Speak</button>
+                <button class="act-btn" onclick="speak('${id}')">🔊</button>
                 <button class="act-btn" onclick="copy('${id}')">📋 Copy</button>
-                <button class="act-btn" onclick="response('${id}')">👍🏻</button>
             </div>` : ''}
         </div>`;
     box.appendChild(row);
- box.scrollTop = box.scrollHeight;
+    box.scrollTop = box.scrollHeight;
 }
 
-// --- FEATURES ---
+// --- UTILITIES ---
+function toggleMenu(show) { 
+    document.getElementById('settings-menu').classList.toggle('open', show); 
+    document.getElementById('menu-overlay').style.display = show ? 'block' : 'none'; 
+}
+function toggleCategory() { 
+    const p = document.getElementById('category-popup'); 
+    p.style.display = (p.style.display === 'block') ? 'none' : 'block'; 
+}
+function closeAll() { 
+    document.getElementById('category-popup').style.display = 'none'; 
+    toggleMenu(false); 
+}
+function setMode(m) { 
+    currentMode = m; 
+    closeAll(); 
+    if(m === 'Google Search') {
+        addMsg("Live Search Mode Active! 🌐 Ab har sawal mini-window mein khulega.", 'bot');
+    } else {
+        addMsg(`Mode Switched to **${m}** ✨`, 'bot'); 
+    }
+}
+function toggleLightMode() { document.body.classList.toggle('light-mode'); }
+function updateUI() { document.getElementById('header-user').innerHTML = `<b>${userName}</b><br>ID: VEDA-777`; }
+function copy(id) { const t = document.getElementById(id).querySelector('.txt-body').innerText; navigator.clipboard.writeText(t); }
+function speak(id) { 
+    const t = document.getElementById(id).querySelector('.txt-body').innerText; 
+    window.speechSynthesis.cancel(); 
+    const u = new SpeechSynthesisUtterance(t); 
+    u.lang = 'hi-IN'; 
+    window.speechSynthesis.speak(u); 
+}
+function clearBrain() { 
+    if(confirm("Warning: Ye aapki saari chat history delete kar dega. Continue?")) { 
+        localStorage.removeItem('vedaMemory'); 
+        location.reload(); 
+    } 
+}
 function downloadChat() {
     let chatText = "--- VEDA AI PRO CHAT HISTORY ---\n\n";
     document.querySelectorAll('.row').forEach(r => {
-        const role = r.classList.contains('user') ? "YOU" : "VEDA";
+        const role = r.classList.contains('user') ? userName.toUpperCase() : "VEDA AI";
         chatText += `[${role}]: ${r.querySelector('.txt-body').innerText}\n\n`;
     });
     const blob = new Blob([chatText], { type: 'text/plain' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = `VedaChat_${userName}.txt`; a.click();
 }
+function toggleAdvanceTheme() { 
+    const isAdv = document.getElementById('advanceModeToggle').checked; 
+    document.getElementById('veda-title').innerText = isAdv ? "VEDA PRO 🚀" : "VEDA AI PRO"; 
+}
 
 function startVoice() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return alert("Mic Not Supported");
+    if (!SpeechRecognition) return alert("Mic aapke browser mein support nahi karta.");
     const recognition = new SpeechRecognition();
     recognition.lang = 'hi-IN';
-    document.getElementById('mic-btn').style.color = 'red';
+    const micBtn = document.getElementById('mic-btn');
+    micBtn.style.color = '#ff4d4d';
+    micBtn.style.transform = 'scale(1.2)';
+    
     recognition.onresult = (e) => {
         document.getElementById('user-in').value = e.results[0][0].transcript;
-        document.getElementById('mic-btn').style.color = '#8e8ea0';
+        micBtn.style.color = '#8e8ea0';
+        micBtn.style.transform = 'scale(1)';
         handleSend();
+    };
+    recognition.onerror = () => {
+        micBtn.style.color = '#8e8ea0';
+        micBtn.style.transform = 'scale(1)';
     };
     recognition.start();
 }
-
-function clearBrain() { if(confirm("Clear All Chat?")) { localStorage.removeItem('vedaMemory'); location.reload(); } }
-function toggleMenu(s) { document.getElementById('settings-menu').classList.toggle('open', s); document.getElementById('menu-overlay').style.display = s ? 'block' : 'none'; }
-function toggleCategory() { const p = document.getElementById('category-popup'); p.style.display = (p.style.display === 'block') ? 'none' : 'block'; }
-function closeAll() { document.getElementById('category-popup').style.display = 'none'; toggleMenu(false); }
-function setMode(m) { currentMode = m; closeAll(); addMsg(`Mode Switched to **${m}**`, 'bot'); }
-function toggleLightMode() { document.body.classList.toggle('light-mode'); }
-function updateUI() { document.getElementById('header-user').innerHTML = `${userName}<br>ID: VEDA-7777`; }
-function speak(id) { const t = document.getElementById(id).querySelector('.txt-body').innerText; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'hi-IN'; window.speechSynthesis.speak(u); }
-function copy(id) { const t = document.getElementById(id).querySelector('.txt-body').innerText; navigator.clipboard.writeText(t); alert("Copied!"); }
-function toggleAdvanceTheme() { const isAdv = document.getElementById('advanceModeToggle').checked; document.getElementById('veda-title').innerText = isAdv ? "VEDA PRO 🚀" : "VEDA AI PRO"; }
 </script>
 </body>
 </html>
