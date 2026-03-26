@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TS bot</title>
+    <title>Veda AI Pro | Professional Edition</title>
     <style>
         :root { 
             --bg: #131314; --card: #1e1f20; --primary: #8ab4f8; 
@@ -12,108 +12,147 @@
         * { box-sizing: border-box; font-family: 'Google Sans', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- Header & Sidebars --- */
-        header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--bg); position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 20px; font-weight: 500; }
-        .user-av { width: 34px; height: 34px; background: #3c4043; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border); font-size: 14px; }
+        /* --- Auth Screen (Name + Email) --- */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 99999; display: flex; align-items: center; justify-content: center; }
+        .auth-card { text-align: center; width: 90%; max-width: 380px; }
+        .auth-card h1 { font-size: 2.5rem; margin-bottom: 30px; color: var(--primary); }
+        .auth-input { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: white; margin-bottom: 12px; outline: none; }
+        .login-btn { width: 100%; padding: 14px; background: var(--primary); color: #000; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; }
 
-        #sidebar, #user-sidebar { position: fixed; top: 0; bottom: 0; width: 280px; background: #000; border-right: 1px solid var(--border); z-index: 10001; transition: 0.3s ease; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        /* --- Sidebars --- */
+        #sidebar, #user-sidebar { position: fixed; top: 0; bottom: 0; width: 280px; background: #0b0b0b; border-right: 1px solid var(--border); z-index: 10001; transition: 0.3s ease; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         #sidebar { left: -280px; }
         #user-sidebar { right: -280px; border-left: 1px solid var(--border); border-right: none; }
         #sidebar.active { left: 0; }
         #user-sidebar.active { right: 0; }
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: none; }
+        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: none; }
 
-        /* --- Gemini Input Bar --- */
-        .footer { padding: 10px 15px 25px; max-width: 800px; margin: 0 auto; width: 100%; text-align: center; }
-        .input-wrapper { background: var(--card); border-radius: 32px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; border: 1px solid transparent; }
-        .input-wrapper:focus-within { background: #282a2c; border-color: var(--border); }
-        textarea { flex: 1; background: none; border: none; color: white; outline: none; resize: none; font-size: 16px; padding: 8px 0; max-height: 150px; }
-        
-        .cat-status { font-size: 11px; color: #9aa0a6; margin-top: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
-        
-        /* --- Category Menu --- */
-        #cat-menu { position: absolute; bottom: 80px; left: 20px; background: #2d2e30; border: 1px solid var(--border); border-radius: 12px; display: none; flex-direction: column; z-index: 1000; overflow: hidden; }
-        .cat-opt { padding: 12px 20px; cursor: pointer; font-size: 14px; transition: 0.2s; white-space: nowrap; }
-        .cat-opt:hover { background: #3c4043; color: var(--primary); }
+        /* --- Header --- */
+        header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .user-av { width: 35px; height: 35px; background: #3c4043; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border); }
 
-        /* --- Chat UI Fixes --- */
+        /* --- Chat Area --- */
         #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 25px; }
-        .row { max-width: 800px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-        .msg { font-size: 16px; line-height: 1.6; }
-        .user-msg { align-self: flex-end; background: var(--user-msg); padding: 12px 20px; border-radius: 20px; max-width: 85%; }
+        .row { max-width: 800px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+        .user-msg { align-self: flex-end; background: var(--user-msg); padding: 12px 18px; border-radius: 18px; max-width: 85%; }
+        .bot-msg { align-self: flex-start; max-width: 90%; }
         
-        .toolkit { display: flex; gap: 12px; margin-top: 5px; opacity: 0.8; }
-        .tool-btn { background: none; border: none; color: #9aa0a6; cursor: pointer; font-size: 16px; }
-        .tool-btn:hover { color: white; }
+        /* --- Gemini Toolkit --- */
+        .toolkit { display: flex; gap: 15px; margin-top: 8px; }
+        .tool-icon { background: none; border: none; color: #9aa0a6; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .tool-icon:hover { color: white; }
 
-        .btn-main { padding: 10px; background: transparent; border: 1px solid var(--border); color: white; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px; }
-        .btn-main:hover { background: #1e1f20; }
+        /* --- Input Bar (Gemini Style) --- */
+        .footer { padding: 10px 15px 20px; max-width: 800px; margin: 0 auto; width: 100%; text-align: center; }
+        .input-bar { background: var(--card); border-radius: 30px; padding: 8px 18px; display: flex; align-items: center; gap: 12px; }
+        textarea { flex: 1; background: none; border: none; color: white; outline: none; resize: none; font-size: 16px; max-height: 150px; }
+        .cat-status { font-size: 11px; color: #9aa0a6; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- Category Menu --- */
+        #cat-menu { position: fixed; bottom: 85px; left: 20px; background: #2d2e30; border: 1px solid var(--border); border-radius: 12px; display: none; flex-direction: column; z-index: 10002; }
+        .cat-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid #3c4043; }
+        .cat-item:last-child { border: none; }
+        .cat-item:hover { color: var(--primary); }
+
+        .sidebar-btn { width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: left; cursor: pointer; margin-bottom: 5px; }
+        .sidebar-btn:hover { background: #1e1f20; }
     </style>
 </head>
 <body>
 
-<div id="overlay" onclick="closeAll()"></div>
-
-<div id="user-sidebar">
-    <h3 style="margin-bottom:20px; color:var(--primary);">User Profile</h3>
-    <div style="background:#1e1f20; padding:15px; border-radius:12px; font-size:14px;">
-        <p><strong>Name:</strong> <span id="stat-name">User</span></p>
-        <p style="margin-top:8px;"><strong>Status:</strong> Professional</p>
-        <p style="margin-top:8px;"><strong>Total Chats:</strong> <span id="stat-chats">0</span></p>
-        <p style="margin-top:8px;"><strong>Session ID:</strong> <span id="stat-id">#0000</span></p>
+<!-- Sign-up with Email -->
+<div id="auth-screen">
+    <div class="auth-card">
+        <h1>Veda Pro</h1>
+        <input type="text" id="reg-name" class="auth-input" placeholder="Aapka Naam">
+        <input type="email" id="reg-email" class="auth-input" placeholder="Aapka Email (e.g. name@mail.com)">
+        <button class="login-btn" onclick="handleAuth()">Shuru Karein</button>
     </div>
-    <button class="btn-main" style="margin-top:20px;" onclick="location.reload()">🔄 Refresh Session</button>
 </div>
 
+<div id="overlay" onclick="closeAll()"></div>
+
+<!-- User Profile Slider -->
+<div id="user-sidebar">
+    <h3 style="color:var(--primary); margin-bottom:15px;">Aapka Profile</h3>
+    <div style="background:#1e1f20; padding:15px; border-radius:10px; font-size:14px;">
+        <p><strong>Naam:</strong> <span id="p-name">--</span></p>
+        <p style="margin-top:10px;"><strong>Email:</strong> <span id="p-email" style="font-size:12px; color:var(--primary);">--</span></p>
+        <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
+        <p><strong>Total Chats:</strong> <span id="p-chats">0</span></p>
+    </div>
+    <button class="sidebar-btn" style="margin-top:auto;" onclick="logout()">Logout</button>
+</div>
+
+<!-- Main Sidebar -->
 <div id="sidebar">
-    <button class="btn-main" onclick="startNewChat()" style="border-style:dashed;">+ New Chat</button>
-    <div style="font-size:12px; color:#444746; margin:10px 0;">RECENT</div>
-    <div id="history-list" style="flex:1; overflow-y:auto;"></div>
-    <button class="btn-main" onclick="saveChat()">💾 Save Current Chat</button>
-    <button class="btn-main" onclick="clearHistory()" style="color:#f28b82;">🗑️ Clear History</button>
-    <button class="btn-main" onclick="alert('Feedback sent to Veda Team!')">📝 Feedback</button>
+    <button class="sidebar-btn" style="border-style:dashed;" onclick="startNewChat()">+ New Chat</button>
+    <div id="history-container" style="flex:1; overflow-y:auto; margin-top:10px;">
+        <!-- Saved chat list -->
+    </div>
+    <button class="sidebar-btn" onclick="saveCurrentChat()">💾 Save Current Chat</button>
+    <button class="sidebar-btn" onclick="clearAllHistory()" style="color:#f28b82;">🗑️ Clear History</button>
+    <button class="sidebar-btn" onclick="alert('Feedback sent! Thank you.')">📝 Feedback</button>
 </div>
 
 <header>
     <div style="display:flex; align-items:center; gap:15px;">
-        <button class="tool-btn" style="font-size:22px;" onclick="toggleSidebar('sidebar')">☰</button>
+        <button class="menu-btn" onclick="toggleSidebar('sidebar')">☰</button>
         <div class="logo">TS bot <span style="color:var(--primary)">Pro</span></div>
     </div>
-    <div class="user-av" id="user-trigger" onclick="toggleSidebar('user-sidebar')">U</div>
+    <div class="user-av" onclick="toggleSidebar('user-sidebar')" id="av-char">U</div>
 </header>
 
 <div id="chat-box"></div>
 
+<!-- Category Floating Menu -->
 <div id="cat-menu">
-    <div class="cat-opt" onclick="setCategory('All', 'Everything')">🌐 All</div>
-    <div class="cat-opt" onclick="setCategory('Study 📚✏', 'Academic Mode')">📚 Study</div>
-    <div class="cat-opt" onclick="setCategory('Fun', 'Entertainment Mode')">🎭 Fun</div>
-    <div class="cat-opt" onclick="setCategory('Wikipedia 🌐', 'Knowledge Base')">📖 Wikipedia</div>
-    <div class="cat-opt" onclick="setCategory('Google Search 🔍', 'Live Internet')">🔍 Google Search</div>
-    <div class="cat-opt" onclick="setCategory('Pro Mode', 'Hybrid Intelligence')">⚡ Pro Mode</div>
+    <div class="cat-item" onclick="selectCat('All', 'Universal Mode')">🌐 All</div>
+    <div class="cat-item" onclick="selectCat('Study 📚✏', 'Academic Mode')">📚 Study</div>
+    <div class="cat-item" onclick="selectCat('Wikipedia 🌐', 'Encyclopedia')">📖 Wikipedia</div>
+    <div class="cat-item" onclick="selectCat('Google Search 🔍', 'Live Search')">🔍 Google Search</div>
+    <div class="cat-item" onclick="selectCat('Pro Mode', 'Hybrid Engine')">⚡ Pro Mode</div>
 </div>
 
 <div class="footer">
-    <div class="input-wrapper">
-        <button class="tool-btn" onclick="toggleCatMenu()">➕</button>
-        <textarea id="user-input" placeholder="Ask Veda..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-        <button class="tool-btn" onclick="startVoice()">🎙️</button>
-        <button class="tool-btn" style="color:var(--primary);" onclick="handleSend()">➤</button>
+    <div class="input-bar">
+        <button class="tool-icon" style="font-size:20px;" onclick="toggleCatMenu()">➕</button>
+        <textarea id="main-input" placeholder="Ask Veda..." rows="1" oninput="autoResize(this)"></textarea>
+        <button class="tool-icon" onclick="startMic()">🎙️</button>
+        <button class="tool-icon" style="color:var(--primary);" onclick="sendMessage()">➤</button>
     </div>
-    <div class="cat-status" id="active-status">MODE: ALL</div>
+    <div class="cat-status" id="status-label">MODE: UNIVERSAL MODE</div>
 </div>
 
 <script>
-    let currentCategory = "All";
-    let chatHistory = JSON.parse(localStorage.getItem('vedaHistory')) || [];
-    let userData = JSON.parse(localStorage.getItem('vedaUser')) || { name: "TS Owner", chats: 0 };
+    let user = JSON.parse(localStorage.getItem('vedaUser')) || null;
+    let history = JSON.parse(localStorage.getItem('vedaHistory')) || [];
+    let currentCat = "All";
 
-    // --- UI Controls ---
+    // --- Authentication ---
+    if(user) document.getElementById('auth-screen').style.display = 'none';
+
+    function handleAuth() {
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        if(!name || !email) return alert("Naam aur Email dono bhariye!");
+        
+        user = { name, email, chats: 0 };
+        localStorage.setItem('vedaUser', JSON.stringify(user));
+        location.reload();
+    }
+
+    function logout() {
+        localStorage.removeItem('vedaUser');
+        location.reload();
+    }
+
+    // --- UI Logic ---
     function toggleSidebar(id) {
         document.getElementById(id).classList.toggle('active');
         document.getElementById('overlay').style.display = 'block';
-        updateUserStats();
+        updateProfileStats();
     }
 
     function closeAll() {
@@ -124,88 +163,142 @@
     }
 
     function toggleCatMenu() {
-        const menu = document.getElementById('cat-menu');
-        menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        const m = document.getElementById('cat-menu');
+        m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
     }
 
-    function setCategory(cat, status) {
-        currentCategory = cat;
-        document.getElementById('active-status').innerText = `MODE: ${status}`;
+    function selectCat(name, label) {
+        currentCat = name;
+        document.getElementById('status-label').innerText = `MODE: ${label}`;
         closeAll();
     }
 
-    function updateUserStats() {
-        document.getElementById('stat-name').innerText = userData.name;
-        document.getElementById('stat-chats').innerText = chatHistory.length;
-        document.getElementById('stat-id').innerText = "#V" + Math.floor(1000 + Math.random() * 9000);
-        document.getElementById('user-trigger').innerText = userData.name[0];
+    function updateProfileStats() {
+        if(!user) return;
+        document.getElementById('p-name').innerText = user.name;
+        document.getElementById('p-email').innerText = user.email;
+        document.getElementById('p-chats').innerText = history.length;
+        document.getElementById('av-char').innerText = user.name[0].toUpperCase();
     }
 
     // --- Chat Logic ---
-    async function handleSend() {
-        const input = document.getElementById('user-input');
-        const val = input.value.trim();
-        if(!val) return;
-
-        addMsg(val, 'user');
-        input.value = "";
-        input.style.height = "auto";
-
-        // Category Strict Logic
-        let response = "";
-        if(currentCategory === "Google Search 🔍") {
-            response = `Searching internet for: ${val}... <br><iframe src="https://www.bing.com/search?q=${val}" style="width:100%; height:300px; border-radius:12px; margin-top:10px;"></iframe>`;
-        } else {
-            // Placeholder for your local file search logic
-            response = `[${currentCategory}] ke mutabik: Aapne pucha "${val}". Main local files aur Wikipedia scan kar raha hoon...`;
-        }
-        
-        setTimeout(() => addMsg(response, 'bot'), 600);
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
     }
 
-    function addMsg(text, type) {
+    async function sendMessage() {
+        const input = document.getElementById('main-input');
+        const text = input.value.trim();
+        if(!text) return;
+
+        createMsg(text, 'user');
+        input.value = "";
+        input.style.height = 'auto';
+
+        // Bot Response Logic
+        setTimeout(() => {
+            let reply = "";
+            if(currentCat === 'Google Search 🔍') {
+                reply = `Internet par dhoond raha hoon: <b>${text}</b>...<br><iframe src="https://www.bing.com/search?q=${text}" style="width:100%;height:350px;border-radius:10px;margin-top:10px;"></iframe>`;
+            } else {
+                reply = `[${currentCat}] Mode ke hisaab se aapka sawal "${text}" scan kiya ja raha hai.`;
+            }
+            createMsg(reply, 'bot');
+        }, 800);
+    }
+
+    function createMsg(text, sender) {
         const box = document.getElementById('chat-box');
         const div = document.createElement('div');
-        div.className = `row ${type}-msg`;
-        div.innerHTML = `<div class="msg">${text}</div>`;
+        div.className = `row ${sender}-msg`;
         
-        if(type === 'bot') {
-            div.innerHTML += `
+        let html = `<div style="font-size:16px;">${text}</div>`;
+        
+        if(sender === 'bot') {
+            // Hum idhar unique ID dete hain har message ko taaki speaker sahi se chale
+            const msgId = "msg-" + Date.now();
+            div.id = msgId;
+            html += `
                 <div class="toolkit">
-                    <button class="tool-btn" onclick="speak('${text.replace(/'/g, "")}')">🔊</button>
-                    <button class="tool-btn">📋</button>
-                    <button class="tool-btn">☑</button>
-                    <button class="tool-btn">X</button>
+                    <button class="tool-icon" onclick="speakText('${msgId}')">🔊</button>
+                    <button class="tool-icon" onclick="copyText('${msgId}')">📋</button>
+                    <button class="tool-icon" onclick="this.style.color='lightgreen'">👍</button>
+                    <button class="tool-icon" onclick="this.parentElement.parentElement.remove()">🗑️</button>
                 </div>`;
         }
+        
+        div.innerHTML = html;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
     }
 
-    function saveChat() {
-        const session = { id: Date.now(), title: "Conversation " + (chatHistory.length + 1), content: document.getElementById('chat-box').innerHTML };
-        chatHistory.unshift(session);
-        localStorage.setItem('vedaHistory', JSON.stringify(chatHistory));
-        alert("Chat Saved to History!");
+    // --- WORKING TOOLS ---
+    function speakText(id) {
+        window.speechSynthesis.cancel();
+        const text = document.getElementById(id).querySelector('div').innerText;
+        const speech = new SpeechSynthesisUtterance(text);
+        speech.lang = 'hi-IN';
+        window.speechSynthesis.speak(speech);
+    }
+
+    function copyText(id) {
+        const text = document.getElementById(id).querySelector('div').innerText;
+        navigator.clipboard.writeText(text);
+        alert("Text Copy Ho Gaya!");
+    }
+
+    // --- HISTORY SYSTEM ---
+    function saveCurrentChat() {
+        const chatContent = document.getElementById('chat-box').innerHTML;
+        if(!chatContent) return alert("Khali chat save nahi ho sakti!");
+        
+        const session = { id: Date.now(), title: "Chat " + (history.length + 1), data: chatContent };
+        history.unshift(session);
+        localStorage.setItem('vedaHistory', JSON.stringify(history));
+        alert("Chat Save Ho Gayi!");
         renderHistory();
     }
 
     function renderHistory() {
-        const list = document.getElementById('history-list');
-        list.innerHTML = chatHistory.map(h => `<div class="cat-opt" style="font-size:12px;">${h.title}</div>`).join('');
+        const cont = document.getElementById('history-container');
+        cont.innerHTML = history.map(h => `
+            <div class="sidebar-btn" onclick="loadChat('${h.id}')">${h.title}</div>
+        `).join('');
     }
 
-    function speak(t) {
-        window.speechSynthesis.cancel();
-        let u = new SpeechSynthesisUtterance(t);
-        u.lang = 'hi-IN';
-        window.speechSynthesis.speak(u);
+    function loadChat(id) {
+        const item = history.find(h => h.id == id);
+        if(item) {
+            document.getElementById('chat-box').innerHTML = item.data;
+            closeAll();
+        }
+    }
+
+    function clearAllHistory() {
+        if(confirm("Saari history delete karein?")) {
+            localStorage.removeItem('vedaHistory');
+            history = [];
+            renderHistory();
+            startNewChat();
+        }
+    }
+
+    function startNewChat() {
+        document.getElementById('chat-box').innerHTML = "";
+        createMsg("Nayi chat shuru ho gayi hai. Sawal puchein!", "bot");
+        closeAll();
+    }
+
+    function startMic() {
+        alert("Microphone Access Requesting...");
+        // Basic mic logic integration
     }
 
     window.onload = () => {
-        updateUserStats();
         renderHistory();
-        addMsg("Namaste! Koi sawal puchein.", "bot");
+        updateProfileStats();
+        if(chatSessions.length === 0) createMsg("Namaste! Veda AI Pro mein aapka swagat hai.", "bot");
     };
 </script>
 </body>
