@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TS Bot</title>
+    <!-- Firebase Libraries (Compatibility Mode for Mobile) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <style>
         /* --- Core Styling --- */
         :root { 
@@ -20,59 +24,42 @@
         .auth-input { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: white; margin-bottom: 12px; outline: none; font-size: 16px; }
         .auth-input:focus { border-color: var(--primary); }
         .login-btn { width: 100%; padding: 14px; background: var(--primary); color: #000; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; }
-        .login-btn:hover { opacity: 0.9; }
 
-        /* --- Sidebars --- */
+        /* --- Sidebars & Header --- */
         #sidebar, #user-sidebar { position: fixed; top: 0; bottom: 0; width: 280px; background: #0b0b0b; z-index: 10001; transition: 0.3s ease; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         #sidebar { left: -280px; border-right: 1px solid var(--border); }
         #user-sidebar { right: -280px; border-left: 1px solid var(--border); }
         #sidebar.active { left: 0; }
         #user-sidebar.active { right: 0; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: none; }
-
-        .sidebar-btn { width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: left; cursor: pointer; font-size: 14px; transition: 0.2s; }
-        .sidebar-btn:hover { background: #1e1f20; }
-
-        /* --- Header --- */
-        header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--bg); z-index: 10; }
+        header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--bg); }
         .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
-        .user-av { width: 36px; height: 36px; background: #3c4043; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border); font-size: 15px; font-weight: bold; color: var(--primary); }
+        .user-av { width: 36px; height: 36px; background: #3c4043; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border); color: var(--primary); font-weight: bold; }
 
         /* --- Chat Area --- */
         #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 25px; scroll-behavior: smooth; }
-        .row { max-width: 800px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .row { max-width: 800px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; }
         .user-msg { align-self: flex-end; background: var(--user-msg); padding: 12px 18px; border-radius: 18px; max-width: 85%; border-bottom-right-radius: 4px; }
         .bot-msg { align-self: flex-start; max-width: 90%; }
-        
-        /* --- Toolkit Buttons --- */
         .toolkit { display: flex; gap: 15px; margin-top: 8px; }
-        .tool-icon { background: none; border: none; color: #9aa0a6; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        .tool-icon:hover { color: white; transform: scale(1.1); }
+        .tool-icon { background: none; border: none; color: #9aa0a6; cursor: pointer; font-size: 16px; }
 
-        /* --- Gemini Input Bar --- */
+        /* --- Input Bar --- */
         .footer { padding: 10px 15px 20px; max-width: 800px; margin: 0 auto; width: 100%; text-align: center; }
-        .input-bar { background: var(--card); border-radius: 30px; padding: 8px 18px; display: flex; align-items: center; gap: 12px; border: 1px solid transparent; }
-        .input-bar:focus-within { border-color: var(--border); background: #282a2c; }
-        textarea { flex: 1; background: none; border: none; color: white; outline: none; resize: none; font-size: 16px; max-height: 150px; padding: 8px 0; }
-        .cat-status { font-size: 11px; color: #9aa0a6; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .input-bar { background: var(--card); border-radius: 30px; padding: 8px 18px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); }
+        textarea { flex: 1; background: none; border: none; color: white; outline: none; resize: none; font-size: 16px; }
+        .cat-status { font-size: 11px; color: #9aa0a6; margin-top: 8px; text-transform: uppercase; }
 
-        /* --- Category Menu --- */
-        #cat-menu { position: fixed; bottom: 90px; left: 20px; background: #2d2e30; border: 1px solid var(--border); border-radius: 12px; display: none; flex-direction: column; z-index: 10002; box-shadow: 0 8px 24px rgba(0,0,0,0.5); overflow: hidden; }
-        .cat-item { padding: 14px 22px; cursor: pointer; border-bottom: 1px solid #3c4043; font-size: 14px; }
-        .cat-item:last-child { border: none; }
-        .cat-item:hover { background: #3c4043; color: var(--primary); }
-
-        /* --- Feedback Modal --- */
+        /* Side Elements */
+        .sidebar-btn { width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border); color: white; border-radius: 8px; text-align: left; cursor: pointer; }
+        #cat-menu { position: fixed; bottom: 90px; left: 20px; background: #2d2e30; border: 1px solid var(--border); border-radius: 12px; display: none; flex-direction: column; z-index: 10002; }
+        .cat-item { padding: 14px 22px; cursor: pointer; border-bottom: 1px solid #3c4043; }
         #feedback-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 20000; }
-        .modal-content { background: #2d2e30; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid var(--border); }
-        .modal-textarea { width: 100%; height: 100px; background: #1e1f20; border: 1px solid var(--border); border-radius: 8px; color: white; padding: 10px; outline: none; resize: none; margin-bottom: 15px; margin-top: 10px; }
-        .modal-btn { padding: 8px 16px; border-radius: 20px; border: none; cursor: pointer; font-weight: 600; }
+        .modal-content { background: #2d2e30; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; }
     </style>
 </head>
 <body>
 
-<!-- Setup/Auth Screen -->
 <div id="auth-screen">
     <div class="auth-card">
         <h1>TS Bot Pro</h1>
@@ -84,118 +71,96 @@
 
 <div id="overlay" onclick="closeAll()"></div>
 
-<!-- Real User Profile Slider -->
 <div id="user-sidebar">
     <h3 style="color:var(--primary); margin-bottom:15px;">User Profile</h3>
     <div style="background:#1e1f20; padding:15px; border-radius:10px; font-size:14px; border: 1px solid var(--border);">
         <p><strong>Name:</strong> <span id="p-name">--</span></p>
         <p style="margin-top:8px;"><strong>Email:</strong> <span id="p-email" style="font-size:12px; color:var(--primary);">--</span></p>
-        <p style="margin-top:8px;"><strong>Sessions:</strong> <span id="p-chats">0</span></p>
-        <!-- Feedback Stats -->
-        <div style="display:flex; justify-content:space-around; margin-top:15px; border-top:1px solid var(--border); padding-top:10px; font-size:16px;">
-            <span title="Likes Given">👍 <span id="p-likes">0</span></span>
-            <span title="Dislikes Given">👎 <span id="p-dislikes">0</span></span>
-        </div>
+        <p style="margin-top:8px;"><strong>Likes:</strong> 👍 <span id="p-likes">0</span></p>
+        <p style="margin-top:8px;"><strong>Dislikes:</strong> 👎 <span id="p-dislikes">0</span></p>
     </div>
-    <button class="sidebar-btn" style="margin-top:auto; color:#f28b82; border-color:#f28b82;" onclick="logout()">Log Out</button>
+    <button class="sidebar-btn" style="margin-top:auto; color:#f28b82;" onclick="logout()">Log Out</button>
 </div>
 
-<!-- Chat History Sidebar -->
 <div id="sidebar">
-    <button class="sidebar-btn" style="border-style:dashed; text-align:center; color:var(--primary); border-color:var(--primary);" onclick="startNewChat()">+ New Chat</button>
-    <div id="history-container" style="flex:1; overflow-y:auto; margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
-    <button class="sidebar-btn" onclick="saveCurrentChat()">💾 Save Current Chat</button>
+    <button class="sidebar-btn" onclick="startNewChat()">+ New Chat</button>
+    <div id="history-container" style="flex:1; overflow-y:auto; margin-top:10px;"></div>
     <button class="sidebar-btn" onclick="clearAllHistory()" style="color:#f28b82;">🗑️ Clear History</button>
 </div>
 
-<!-- Header -->
 <header>
     <div style="display:flex; align-items:center; gap:15px;">
         <button class="menu-btn" onclick="toggleSidebar('sidebar')">☰</button>
         <div class="logo">TS Bot <span style="color:var(--primary)">Pro</span></div>
     </div>
-    <div class="user-av" onclick="toggleSidebar('user-sidebar')" id="av-char" title="Profile">U</div>
+    <div class="user-av" onclick="toggleSidebar('user-sidebar')" id="av-char">U</div>
 </header>
 
-<!-- Chat Area -->
 <div id="chat-box"></div>
 
-<!-- Dislike Feedback Modal -->
-<div id="feedback-modal">
-    <div class="modal-content">
-        <h3 style="color:var(--primary);">Help Bot Improve</h3>
-        <textarea id="feedback-text" class="modal-textarea" placeholder="Is jawab mein kya kami thi?"></textarea>
-        <div style="display:flex; justify-content:flex-end; gap:10px;">
-            <button class="modal-btn" style="background:transparent; color:#9aa0a6;" onclick="closeFeedback()">Cancel</button>
-            <button class="modal-btn" style="background:var(--primary); color:#000;" onclick="saveDetailedFeedback()">Submit</button>
-        </div>
-    </div>
-</div>
-
-<!-- Category Menu -->
 <div id="cat-menu">
     <div class="cat-item" onclick="selectCat('All', 'Universal Mode')">🌐 All Mode</div>
-    <div class="cat-item" onclick="selectCat('Study 📚✏', 'Academic Focus')">📚 Study Mode</div>
-    <div class="cat-item" onclick="selectCat('Wikipedia 🌐', 'Encyclopedia API')">📖 Wikipedia (Real API)</div>
-    <div class="cat-item" onclick="selectCat('Google Search 🔍', 'Live Internet')">🔍 Google Search</div>
-    <div class="cat-item" onclick="selectCat('Pro Mode', 'Hybrid Logic')">⚡ Pro Mode</div>
+    <div class="cat-item" onclick="selectCat('Wikipedia 🌐', 'Encyclopedia API')">📖 Wikipedia</div>
 </div>
 
-<!-- Input Bar -->
 <div class="footer">
     <div class="input-bar">
-        <button class="tool-icon" style="font-size:22px;" onclick="toggleCatMenu()" title="Categories">＋</button>
+        <button class="tool-icon" onclick="toggleCatMenu()">＋</button>
         <textarea id="main-input" placeholder="Ask TS Bot..." rows="1" oninput="autoResize(this)"></textarea>
-        <button class="tool-icon" onclick="startMic()" title="Voice Typing">🎙️</button>
-        <button class="tool-icon" style="color:var(--primary); font-size:20px;" onclick="sendMessage()" title="Send">➤</button>
+        <button class="tool-icon" style="color:var(--primary)" onclick="sendMessage()">➤</button>
     </div>
     <div class="cat-status" id="status-label">MODE: UNIVERSAL MODE</div>
 </div>
 
-<!-- Custom Database Scripts (Optional/Fallback) -->
-<script src="core.js"></script>
-<script src="study.js"></script>
-<script src="anime.js"></script>
-<script src="responses.js"></script>
-<script src="about.js"></script>
-<script scr="script.js"></script>
-    
 <script>
-   // --- GLOBAL VARIABLES & INIT ---
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyAHVrybvj-G6OlWDhuk6lMYQkfzL0uo13c",
+        authDomain: "ts-bot-24442.firebaseapp.com",
+        projectId: "ts-bot-24442",
+        storageBucket: "ts-bot-24442.firebasestorage.app",
+        messagingSenderId: "31578982286",
+        appId: "1:31578982286:web:fb393ee8fde147cf74c6df"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // --- GLOBALS ---
     let user = JSON.parse(localStorage.getItem('tsUser')) || null;
     let history = JSON.parse(localStorage.getItem('tsHistory')) || [];
     let currentCat = "All";
-    let activeMsgIdForFeedback = null;
 
     if(user) {
         document.getElementById('auth-screen').style.display = 'none';
-        if(!user.feedback) user.feedback = { likes: 0, dislikes: 0, logs: [] };
+        updateProfileStats();
     }
 
-    window.onload = () => { 
-        renderHistory(); 
-        updateProfileStats(); 
-        if(history.length === 0 && user) createMsg(`Namaste ${user.name}! Main TS Bot hoon. Aaj kya search karna hai?`, "bot"); 
-    };
-
-    // --- AUTHENTICATION ---
-    function handleAuth() {
+    // --- AUTH ---
+    async function handleAuth() {
         const name = document.getElementById('reg-name').value.trim();
         const email = document.getElementById('reg-email').value.trim();
-        if(!name || !email) return alert("Kripya Apna Naam aur Email daalein!");
+        if(!name || !email) return alert("Details bhariye!");
+
+        const userRef = db.collection("users").doc(email);
+        const doc = await userRef.get();
         
-        user = { name, email, feedback: { likes: 0, dislikes: 0, logs: [] } };
+        if (!doc.exists) {
+            user = { name, email, likes: 0, dislikes: 0 };
+            await userRef.set(user);
+        } else {
+            user = doc.data();
+        }
+        
         localStorage.setItem('tsUser', JSON.stringify(user));
         location.reload();
     }
+
     function logout() { localStorage.removeItem('tsUser'); location.reload(); }
 
-    // --- UI CONTROLS ---
+    // --- UI ---
     function toggleSidebar(id) {
-        closeAll();
-        document.getElementById(id).classList.add('active');
+        document.getElementById(id).classList.toggle('active');
         document.getElementById('overlay').style.display = 'block';
-        updateProfileStats();
     }
     function closeAll() {
         document.getElementById('sidebar').classList.remove('active');
@@ -211,269 +176,72 @@
         currentCat = name;
         document.getElementById('status-label').innerText = `MODE: ${label}`;
         closeAll();
-        showToast(`${name} mode activated!`);
     }
     function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 
-    // --- PROFILE STATS ---
-    function updateProfileStats() {
-        if(!user) return;
-        document.getElementById('p-name').innerText = user.name;
-        document.getElementById('p-email').innerText = user.email;
-        document.getElementById('p-chats').innerText = history.length;
-        document.getElementById('p-likes').innerText = user.feedback.likes;
-        document.getElementById('p-dislikes').innerText = user.feedback.dislikes;
-        document.getElementById('av-char').innerText = user.name[0].toUpperCase();
-    }
-
-    // --- REAL WIKIPEDIA API LOGIC ---
-    async function fetchFromWiki(query) {
-        try {
-            // Using English Wikipedia REST API for best summary
-            const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-            if(res.status === 404) return "Wikipedia par is keyword se related kuch nahi mila. 😔";
-            const data = await res.json();
-            
-            if (data.type === 'standard' || data.type === 'disambiguation') {
-                let html = `<b>Wikipedia Summary:</b> ${data.extract}<br>`;
-                if(data.content_urls) html += `<a href="${data.content_urls.desktop.page}" target="_blank" style="color:var(--primary); font-size:14px; margin-top:5px; display:inline-block;">📖 Read Full Article</a>`;
-                return html;
-            }
-            return "Maaf karna, exact information nahi mil payi.";
-        } catch (error) {
-            return "⚠️ Internet error. Wikipedia API connect nahi ho paayi.";
-        }
-    }
-
-    // --- MAIN CHAT ENGINE ---
+    // --- CHAT ENGINE ---
     async function sendMessage() {
-    const input = document.getElementById('main-input');
-    const text = input.value.trim();
-    if(!text) return;
+        const input = document.getElementById('main-input');
+        const text = input.value.trim();
+        if(!text) return;
 
-    createMsg(text, 'user');
-    input.value = "";
-    input.style.height = 'auto';
+        createMsg(text, 'user');
+        input.value = "";
+        input.style.height = 'auto';
 
-    setTimeout(async () => {
-        let response = "";
-        
-        // ... (Aapka purana Logic: if/else ya Database check) ...
-        // Maan lijiye response generate ho gaya:
-        response = "Ye bot ka jawab hai!"; 
-
-        createMsg(response, 'bot'); 
-
-        //  YAHAN YE LINE ADD KAREIN 
-        saveMessageToCloud(text, response); 
-
-    }, 500);
-}
-
-        // Processing Delay logic
         setTimeout(async () => {
             let response = "";
-            const query = text.toLowerCase();
-            const db = {...(window.vedaCore || {}), ...(window.vedaStudy || {}), ...(window.anime || {})};
-
-            // 1. Check Category Overrides
             if (currentCat === 'Wikipedia 🌐') {
                 response = await fetchFromWiki(text);
-            } 
-            else if (currentCat === 'Google Search 🔍') {
-                response = `Searching Live Internet...<br><iframe src="https://www.bing.com/search?q=${encodeURIComponent(text)}" style="width:100%;height:350px;border-radius:10px;margin-top:10px;background:white;border:none;"></iframe>`;
-            }
-            // 2. Local Database & Greetings
-            else if (query === "hello" || query === "hi") {
-                response = `Hello ${user.name}! Main TS Bot hoon. Kahiye kya janna hai?`;
-            } 
-            else if (db[query]) {
-                response = db[query];
-            } 
-            // 3. Fallback to API/Google Suggestion
-            else {
-                response = `Mujhe apni memory mein iska exact match nahi mila.<br><br>
-                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px;" onclick="triggerAutoSearch('Wiki', '${text}')">📖 Search Wikipedia</button>
-                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px; margin-left:8px;" onclick="triggerAutoSearch('Google', '${text}')">🔍 Search Google</button>`;
+            } else {
+                response = "Main TS Bot hoon. Aapka message Cloud par save ho raha hai!";
             }
 
             createMsg(response, 'bot');
+            saveMessageToCloud(text, response);
         }, 500);
     }
 
-    function triggerAutoSearch(type, text) {
-        document.getElementById('main-input').value = text;
-        if(type === 'Wiki') selectCat('Wikipedia 🌐', 'Encyclopedia API');
-        else selectCat('Google Search 🔍', 'Live Internet');
-        sendMessage();
+    async function fetchFromWiki(query) {
+        try {
+            const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+            const data = await res.json();
+            return data.extract || "Nahi mila.";
+        } catch { return "Error API."; }
     }
 
-    // --- MESSAGE CREATION & TOOLKIT ---
     function createMsg(text, sender) {
         const box = document.getElementById('chat-box');
         const div = document.createElement('div');
-        const msgId = "msg-" + Date.now() + Math.random().toString(36).substr(2,5);
-        
         div.className = `row ${sender}-msg`;
-        div.id = msgId;
-        
-        let html = `<div class="msg-content" style="font-size:16px; line-height:1.5;">${text}</div>`;
-        
-        if(sender === 'bot') {
-            html += `
-                <div class="toolkit">
-                    <button class="tool-icon" onclick="speakText('${msgId}')" title="Listen">🔊</button>
-                    <button class="tool-icon" onclick="copyText('${msgId}')" title="Copy">📋</button>
-                    <button class="tool-icon like-btn" onclick="handleFeedback('${msgId}', 'like')" title="Good">👍</button>
-                    <button class="tool-icon dislike-btn" onclick="handleFeedback('${msgId}', 'dislike')" title="Bad">👎</button>
-                </div>`;
-        }
-        
-        div.innerHTML = html;
+        div.innerHTML = `<div class="msg-content">${text}</div>`;
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
     }
 
-    // --- WORKING TOOLS ---
-    function speakText(id) {
-        window.speechSynthesis.cancel();
-        // Remove HTML tags for clean reading
-        const text = document.getElementById(id).querySelector('.msg-content').innerText;
-        const s = new SpeechSynthesisUtterance(text);
-        s.lang = 'hi-IN'; // Hindi/Hinglish Voice
-        window.speechSynthesis.speak(s);
-    }
-
-    function copyText(id) {
-        const text = document.getElementById(id).querySelector('.msg-content').innerText;
-        navigator.clipboard.writeText(text);
-        showToast("Text Copied!");
-    }
-
-    function startMic() {
-        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if(!Rec) return alert("Voice typing is not supported in this browser.");
-        const r = new Rec(); 
-        r.lang = 'hi-IN';
-        showToast("Listening... Speak now 🎙️");
-        r.onresult = (e) => { 
-            document.getElementById('main-input').value = e.results[0][0].transcript; 
-            sendMessage(); 
-        };
-        r.start();
-    }
-
-    // --- FEEDBACK SYSTEM (REAL DATA LOGGING) ---
-    function handleFeedback(msgId, type) {
-        const msgEl = document.getElementById(msgId);
-        if (type === 'like') {
-            msgEl.querySelector('.like-btn').style.color = "var(--primary)";
-            msgEl.querySelector('.dislike-btn').style.color = "#9aa0a6";
-            user.feedback.likes++;
-            saveUser();
-            showToast("Thanks! Bot is learning. 😊");
-        } else {
-            activeMsgIdForFeedback = msgId;
-            document.getElementById('feedback-modal').style.display = 'flex';
-        }
-    }
-
-    function closeFeedback() {
-        document.getElementById('feedback-modal').style.display = 'none';
-        document.getElementById('feedback-text').value = "";
-    }
-
-    function saveDetailedFeedback() {
-        const text = document.getElementById('feedback-text').value.trim();
-        if(!text) return alert("Please specify the issue.");
-
-        const msgEl = document.getElementById(activeMsgIdForFeedback);
-        const query = msgEl.previousElementSibling?.innerText || "Unknown";
-
-        user.feedback.dislikes++;
-        user.feedback.logs.push({ query, issue: text, date: new Date().toLocaleString() });
-        
-        msgEl.querySelector('.dislike-btn').style.color = "#f28b82";
-        msgEl.querySelector('.like-btn').style.color = "#9aa0a6";
-
-        saveUser();
-        closeFeedback();
-        showToast("Feedback submitted. 🛠️");
-    }
-
-    function saveUser() {
-        localStorage.setItem('tsUser', JSON.stringify(user));
-        updateProfileStats();
-    }
-
-    // --- HISTORY SYSTEM ---
-    function saveCurrentChat() {
-        const content = document.getElementById('chat-box').innerHTML;
-        if(!content || content.trim() === "") return;
-        const title = document.querySelector('.user-msg .msg-content')?.innerText.substring(0, 20) || "Conversation";
-        
-        history.unshift({ id: Date.now(), title: title + "...", data: content });
-        localStorage.setItem('tsHistory', JSON.stringify(history));
-        renderHistory();
-        showToast("Chat Saved! 💾");
-    }
-
-    function renderHistory() {
-        const cont = document.getElementById('history-container');
-        cont.innerHTML = history.map(h => `<button class="sidebar-btn" onclick="loadChat(${h.id})">${h.title}</button>`).join('');
-    }
-
-    function loadChat(id) {
-        const item = history.find(h => h.id == id);
-        if(item) { 
-            document.getElementById('chat-box').innerHTML = item.data; 
-            closeAll(); 
-        }
-    }
-
-    function clearAllHistory() {
-        if(confirm("Are you sure you want to clear all history?")) { 
-            localStorage.removeItem('tsHistory'); 
-            history = []; 
-            renderHistory(); 
-            startNewChat(); 
-        }
-    }
-
-    function startNewChat() { 
-        document.getElementById('chat-box').innerHTML = ""; 
-        closeAll(); 
-        createMsg(`Mai aapki help Kaise karun?`, "bot"); 
-    }
-
-    // Helper Toast Notification
-
-    function showToast(msg) {
-        const toast = document.createElement('div');
-        toast.style = "position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#3c4043; color:white; padding:8px 16px; border-radius:20px; font-size:13px; z-index:10005;";
-        toast.innerText = msg;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
-    }
-
-    // Bas ek baar ye function kaafi hai
+    // --- CLOUD LOGGING ---
     async function saveMessageToCloud(uText, bText) {
-        if(!user || !user.email) return;
-        try {
-            await db.collection("chats").add({
-                user_email: user.email,
-                user_name: user.name,
-                question: uText,
-                answer: bText,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            console.log("Chat saved! 🚀");
-        } catch (error) {
-            console.error("Cloud Error:", error);
-        }
+        if(!user) return;
+        await db.collection("chats").add({
+            email: user.email,
+            user: uText,
+            bot: bText,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
     }
 
+    function updateProfileStats() {
+        if(!user) return;
+        document.getElementById('p-name').innerText = user.name;
+        document.getElementById('p-email').innerText = user.email;
+        document.getElementById('p-likes').innerText = user.likes || 0;
+        document.getElementById('p-dislikes').innerText = user.dislikes || 0;
+        document.getElementById('av-char').innerText = user.name[0].toUpperCase();
+    }
 
+    function startNewChat() { document.getElementById('chat-box').innerHTML = ""; closeAll(); }
+    function clearAllHistory() { localStorage.removeItem('tsHistory'); history = []; location.reload(); }
 </script>
+
 </body>
 </html>
