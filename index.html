@@ -441,6 +441,24 @@
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2500);
     }
+    // --- Yahan se Copy Karein ---
+async function saveMessageToCloud(uText, bText) {
+    if(!user || !user.email) return;
+
+    try {
+        await db.collection("chats").add({
+            user_email: user.email,
+            user_name: user.name,
+            question: uText,
+            answer: bText,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        console.log("Chat saved to cloud! 🚀");
+    } catch (error) {
+        console.error("Cloud Error:", error);
+    }
+}
+
 </script>
 </body>
 </html>
