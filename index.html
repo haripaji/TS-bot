@@ -253,42 +253,76 @@ function closeGoogleWindow() {
 }
 
 // --- CORE LOGIC ---
-/* Inline Search Card Style */
-.search-card {
-    width: 100%;
-    max-width: 500px;
-    height: 400px; /* Choti height taaki chat chalti rahe */
-    border-radius: 15px;
-    border: 1px solid var(--border);
-    overflow: hidden;
-    margin-top: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    display: flex;
-    flex-direction: column;
-}
-.search-card-header {
-    background: var(--sidebar);
-    padding: 8px 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    border-bottom: 1px solid var(--border);
-}
-.search-iframe {
-    flex: 1;
-    width: 100%;
-    border: none;
-    background: white;
-}
-.full-btn {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 2px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 10px;
+async function processLogic(q) {
+    const query = q.toLowerCase().trim();
+    const isAdv = document.getElementById('advanceModeToggle').checked;
+
+    // 1. Database Connect (Local Files)
+    const db = { 
+        ...(window.vedaCore || {}), 
+        ...(window.vedaStudy || {}), 
+        ...(window.vedaAnime || {}), 
+        ...(window.vedaResponses || {}), 
+        ...(JSON.parse(localStorage.getItem('vedaMemory')) || {}) 
+    };
+
+    // Check in Local Files first
+    if(db[query]) return db[query];
+    for (let key in db) { if (query.includes(key) && key.length > 2) return db[key]; }
+
+    // 2. Image Generation Mode
+    const imageKeywords = ["image", "photo", "pic", "generate", "create", "dikhao", "tasveer", "draw"];
+    if(imageKeywords.some(k => query.includes(k)) || currentMode === 'Image') {
+        let p = query;
+        imageKeywords.forEach(k => p = p.replace(k, ""));
+        p = p.trim() || "beautiful futuristic scenery";
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true`;
+        return `Lo bhai, ye raha result: <br><img src="${url}" class="ai-media">`;
+    }
+
+    if(query.includes("owner") || query.includes("developer") || query.includes("thoughts sounds")) {
+        return "Mujhe **Thoughts Sounds** ne design aur develop kiya hai. 😎";
+    }
+
+    // 3. Math Calculation
+    if (/^[0-9+\-*/(). ]+$/.test(query) && query.length >= 3) {
+        try { return `Calculation Result: **${eval(query)}**`; } catch(e) {}
+    }
+
+    // 4. Pro Mode (Vercel API)
+    if(isAdv) {
+        try {
+            const res = await fetch(VERCEL_URL, { 
+                method: "POST", headers: {"Content-Type":"application/json"}, 
+                body: JSON.stringify({ query: q, user: userName }) 
+            });
+            const data = await res.json();
+            if(data.reply) return data.reply;
+        } catch(e) { console.warn("Vercel API failed", e); }
+    }
+
+    // 5. Wikipedia Check
+    try {
+        const wiki = await fetch(`https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+        const d = await wiki.json();
+        if (d.extract && d.type !== "disambiguation") {
+            let img = d.thumbnail ? `<img src="${d.thumbnail.source}" style="max-width:200px; border-radius:8px; margin-bottom:10px;"><br>` : "";
+            return `📚 **Quick Info:**<br>${img}${d.extract}`;
+        }
+    } catch (e) {}
+
+    // 6. INLINE SEARCH RESPONSE (Jaisa aapne manga tha)
+    const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
+    return `
+        Mujhe exact jawab nahi mila, par main aapke liye Live Search result yahi la raha hoon:
+        <div class="search-card">
+            <div class="search-card-header">
+                <span>🌐 Live Search: ${q}</span>
+                <button class="full-btn" onclick="window.open('${searchUrl}', '_blank')">Full View</button>
+            </div>
+            <iframe src="${searchUrl}" class="search-iframe"></iframe>
+        </div>
+    `;
 }
 
 
