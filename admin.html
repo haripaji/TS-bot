@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>TS Admin Panel</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { background: #0b0b0b; color: #e3e3e3; font-family: sans-serif; padding: 20px; }
+        .card { background: #1e1f20; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #8ab4f8; }
+        .user-info { color: #8ab4f8; font-weight: bold; font-size: 14px; }
+        .time { font-size: 10px; color: #9aa0a6; }
+        button { padding: 10px; background: #8ab4f8; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Admin Dashboard 🛡️</h1>
+    <button onclick="loadLogs()">🔄 Refresh Messages</button>
+    <div id="logs" style="margin-top: 20px;">Loading...</div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHVrybvj-G6OlWDhuk6lMYQkfzL0uo13c",
+            authDomain: "ts-bot-24442.firebaseapp.com",
+            projectId: "ts-bot-24442",
+            storageBucket: "ts-bot-24442.firebasestorage.app",
+            messagingSenderId: "31578982286",
+            appId: "1:31578982286:web:fb393ee8fde147cf74c6df"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Security Prompt
+        window.onload = () => {
+            const p = prompt("Enter Security Key:");
+            if(p !== "tsadmin123") { alert("Access Denied"); window.location.href="index.html"; }
+            else { loadLogs(); }
+        }
+
+        async function loadLogs() {
+            const logDiv = document.getElementById('logs');
+            logDiv.innerHTML = "Fetching...";
+            const snap = await db.collection("chats").orderBy("timestamp", "desc").limit(100).get();
+            logDiv.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                logDiv.innerHTML += `
+                    <div class="card">
+                        <div class="user-info">${d.user_name} (${d.email})</div>
+                        <div style="margin:5px 0;"><b>Q:</b> ${d.user}</div>
+                        <div style="color:#9aa0a6;"><b>A:</b> ${d.bot}</div>
+                        <div class="time">${d.timestamp ? d.timestamp.toDate().toLocaleString() : ''}</div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
