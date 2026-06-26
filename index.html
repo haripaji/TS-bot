@@ -163,7 +163,7 @@
 
 
 <script>
-    // --- FIREBASE CONFIG ---
+                    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyAHVrybvj-G6OlWDhuk6lMYQkfzL0uo13c",
         authDomain: "ts-bot-24442.firebaseapp.com",
@@ -245,8 +245,8 @@
         document.getElementById('p-name').innerText = user.name;
         document.getElementById('p-email').innerText = user.email;
         document.getElementById('p-chats').innerText = history.length;
-        document.getElementById('p-likes').innerText = user.feedback.likes;
-        document.getElementById('p-dislikes').innerText = user.feedback.dislikes;
+        document.getElementById('p-likes').innerText = user.feedback ? user.feedback.likes : 0;
+        document.getElementById('p-dislikes').innerText = user.feedback ? user.feedback.dislikes : 0;
         document.getElementById('av-char').innerText = user.name[0].toUpperCase();
     }
 
@@ -289,8 +289,13 @@
             let response = "";
             const query = text.toLowerCase();
             
-            // Check External Local Variables if they exist (Study, Anime)
-            const externalDB = {...(window.vedaCore || {}), ...(window.vedaStudy || {}), ...(window.anime || {}), ...localDB};
+            // Safe merging of external databases
+            const externalDB = {
+                ...(window.vedaCore || {}), 
+                ...(window.vedaStudy || {}), 
+                ...(window.anime || {}), 
+                ...localDB
+            };
 
             // 1. Wikipedia Mode
             if (currentCat === 'Wikipedia 🌐') {
@@ -300,15 +305,15 @@
             else if (currentCat === 'Google Search 🔍') {
                 response = `Searching Live Internet...<br><iframe src="https://www.bing.com/search?q=${encodeURIComponent(text)}" style="width:100%;height:350px;border-radius:10px;margin-top:10px;background:white;border:none;"></iframe>`;
             }
-            // 3. Exact Database Match
+            // 3. Exact Database Match (Case-Insensitive Check)
             else if (externalDB[query]) {
                 response = externalDB[query];
             } 
             // 4. Default Fallback
             else {
                 response = `Mujhe apni memory mein iska exact match nahi mila.<br><br>
-                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px;" onclick="triggerAutoSearch('Wiki', '${text}')">📖 Search Wikipedia</button>
-                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px; margin-left:8px;" onclick="triggerAutoSearch('Google', '${text}')">🔍 Search Google</button>`;
+                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px;" onclick="triggerAutoSearch('Wiki', '${text.replace(/'/g, "\\'")}')">📖 Search Wikipedia</button>
+                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px; margin-left:8px;" onclick="triggerAutoSearch('Google', '${text.replace(/'/g, "\\'")}')">🔍 Search Google</button>`;
             }
 
             createMsg(response, 'bot');
@@ -329,7 +334,8 @@
         const div = document.createElement('div');
         const msgId = "msg-" + Date.now() + Math.random().toString(36).substr(2,5);
         
-        div.className = `row ${sender}-msg`;
+        // Added 'msg-row' to safely reference chat bubbles later
+        div.className = `row ${sender}-msg msg-row`;
         div.id = msgId;
         
         let html = `<div class="msg-content" style="font-size:16px; line-height:1.5;">${text}</div>`;
@@ -393,6 +399,8 @@
     // --- FEEDBACK SYSTEM ---
     function handleFeedback(msgId, type) {
         const msgEl = document.getElementById(msgId);
+        if (!user.feedback) user.feedback = { likes: 0, dislikes: 0, logs: [] };
+
         if (type === 'like') {
             msgEl.querySelector('.like-btn').style.color = "var(--primary)";
             msgEl.querySelector('.dislike-btn').style.color = "#9aa0a6";
@@ -415,8 +423,20 @@
         if(!text) return alert("Please specify the issue.");
 
         const msgEl = document.getElementById(activeMsgIdForFeedback);
-        const query = msgEl.previousElementSibling?.innerText || "Unknown";
+        
+        // Safer way to find the user's last question row
+        let query = "Unknown Query";
+        let prevEl = msgEl.previousElementSibling;
+        while(prevEl) {
+            if(prevEl.classList.contains('user-msg')) {
+                query = prevEl.querySelector('.msg-content').innerText;
+                break;
+            }
+            prevEl = prevEl.previousElementSibling;
+        }
 
+        if (!user.feedback) user.feedback = { likes: 0, dislikes: 0, logs: [] };
+        
         user.feedback.dislikes++;
         user.feedback.logs.push({ query, issue: text, date: new Date().toLocaleString() });
         
@@ -437,7 +457,8 @@
     function saveCurrentChat() {
         const content = document.getElementById('chat-box').innerHTML;
         if(!content || content.trim() === "") return;
-        const title = document.querySelector('.user-msg .msg-content')?.innerText.substring(0, 20) || "Conversation";
+        const firstUserMsg = document.querySelector('.user-msg .msg-content');
+        const title = firstUserMsg ? firstUserMsg.innerText.substring(0, 20) : "Conversation";
         
         history.unshift({ id: Date.now(), title: title + "...", data: content });
         localStorage.setItem('tsHistory', JSON.stringify(history));
@@ -447,6 +468,7 @@
 
     function renderHistory() {
         const cont = document.getElementById('history-container');
+        if(!cont) return;
         cont.innerHTML = history.map(h => `<button class="sidebar-btn" onclick="loadChat(${h.id})">${h.title}</button>`).join('');
     }
 
@@ -475,11 +497,15 @@
 
     // --- HELPER ---
     function showToast(msg) {
+        const oldToast = document.getElementById('ts-toast');
+        if(oldToast) oldToast.remove();
+
         const toast = document.createElement('div');
+        toast.id = 'ts-toast';
         toast.style = "position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#3c4043; color:white; padding:8px 16px; border-radius:20px; font-size:13px; z-index:10005;";
         toast.innerText = msg;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
+        setTimeout(() => { if(toast) toast.remove(); }, 2500);
     }
 </script>
 
