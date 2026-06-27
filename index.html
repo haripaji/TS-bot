@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TS Bot</title>
+    <title>TS Bot Pro</title>
+    
     <!-- Firebase Libraries -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
+    <!-- External Files (अगर ये नहीं होंगी तो भी कोड क्रैश नहीं होगा) -->
     <script src="core.js"></script>
     <script src="study.js"></script>
     <script src="anime.js"></script>
     <script src="about.js"></script>
     <script src="responses.js"></script>
-    <script src="script.js"></script>
 
     <style>
         /* --- Core Styling --- */
@@ -27,10 +29,9 @@
         /* --- Auth Screen --- */
         #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 99999; display: flex; align-items: center; justify-content: center; }
         .auth-card { text-align: center; width: 90%; max-width: 380px; }
-        .auth-card h1 { font-size: 2.5rem; margin-bottom: 30px; color: var(--primary); font-weight: 500; }
-        .auth-input { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: white; margin-bottom: 12px; outline: none; font-size: 16px; }
-        .auth-input:focus { border-color: var(--primary); }
-        .login-btn { width: 100%; padding: 14px; background: var(--primary); color: #000; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; }
+        .auth-card h1 { font-size: 2.5rem; margin-bottom: 10px; color: var(--primary); font-weight: 500; }
+        .auth-card p { margin-bottom: 25px; color: #9aa0a6; font-size: 14px; }
+        .login-btn { width: 100%; padding: 14px; background: white; color: black; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 12px; }
         .login-btn:hover { opacity: 0.9; }
 
         /* --- Sidebars --- */
@@ -47,7 +48,7 @@
         /* --- Header --- */
         header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--bg); z-index: 10; }
         .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
-        .user-av { width: 36px; height: 36px; background: #3c4043; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border); font-size: 15px; font-weight: bold; color: var(--primary); }
+        .user-av { width: 36px; height: 36px; background: #3c4043; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border); font-size: 15px; font-weight: bold; color: var(--primary); overflow: hidden; }
 
         /* --- Chat Area --- */
         #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 25px; scroll-behavior: smooth; }
@@ -56,12 +57,23 @@
         .user-msg { align-self: flex-end; background: var(--user-msg); padding: 12px 18px; border-radius: 18px; max-width: 85%; border-bottom-right-radius: 4px; }
         .bot-msg { align-self: flex-start; max-width: 90%; }
         
+        /* --- Image Chat Styling --- */
+        .chat-img { max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 8px; object-fit: contain; border: 1px solid var(--border); }
+
+        /* --- Typing Indicator Animation --- */
+        .typing-indicator { display: inline-flex; align-items: center; gap: 5px; padding: 14px 18px; background: var(--card); border-radius: 18px; border-bottom-left-radius: 4px; max-width: 80px; margin-bottom: 10px; }
+        .dot { width: 7px; height: 7px; background: #9aa0a6; border-radius: 50%; animation: blink 1.4s infinite both; }
+        .dot:nth-child(1) { animation-delay: 0.2s; }
+        .dot:nth-child(2) { animation-delay: 0.4s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.2); } }
+
         /* --- Toolkit Buttons --- */
         .toolkit { display: flex; gap: 15px; margin-top: 8px; }
         .tool-icon { background: none; border: none; color: #9aa0a6; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .tool-icon:hover { color: white; transform: scale(1.1); }
 
-        /* --- Gemini Input Bar --- */
+        /* --- Input Bar --- */
         .footer { padding: 10px 15px 20px; max-width: 800px; margin: 0 auto; width: 100%; text-align: center; }
         .input-bar { background: var(--card); border-radius: 30px; padding: 8px 18px; display: flex; align-items: center; gap: 12px; border: 1px solid transparent; }
         .input-bar:focus-within { border-color: var(--border); background: #282a2c; }
@@ -74,8 +86,8 @@
         .cat-item:last-child { border: none; }
         .cat-item:hover { background: #3c4043; color: var(--primary); }
 
-        /* --- Feedback Modal --- */
-        #feedback-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 20000; }
+        /* --- Modals (Shared) --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 20000; }
         .modal-content { background: #2d2e30; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid var(--border); }
         .modal-textarea { width: 100%; height: 100px; background: #1e1f20; border: 1px solid var(--border); border-radius: 8px; color: white; padding: 10px; outline: none; resize: none; margin-bottom: 15px; margin-top: 10px; }
         .modal-btn { padding: 8px 16px; border-radius: 20px; border: none; cursor: pointer; font-weight: 600; }
@@ -87,9 +99,11 @@
 <div id="auth-screen">
     <div class="auth-card">
         <h1>TS Bot Pro</h1>
-        <input type="text" id="reg-name" class="auth-input" placeholder="Aapka Naam">
-        <input type="email" id="reg-email" class="auth-input" placeholder="Aapka Email">
-        <button class="login-btn" onclick="handleAuth()">Get Started</button>
+        <p>Apne Google account se surakshit login karein</p>
+        <button class="login-btn" onclick="signInWithGoogle()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="22" alt="Google">
+            Continue with Google
+        </button>
     </div>
 </div>
 
@@ -107,6 +121,7 @@
             <span title="Dislikes Given">👎 <span id="p-dislikes">0</span></span>
         </div>
     </div>
+    <button class="sidebar-btn" style="margin-top:15px; text-align:center; color:#fff; border-color:#fff; background:#2b2c2d;" onclick="openGeneralFeedback()">📝 Send General Feedback</button>
     <button class="sidebar-btn" style="margin-top:auto; color:#f28b82; border-color:#f28b82;" onclick="logout()">Log Out</button>
 </div>
 
@@ -131,13 +146,25 @@
 <div id="chat-box"></div>
 
 <!-- Dislike Feedback Modal -->
-<div id="feedback-modal">
+<div id="feedback-modal" class="modal-overlay">
     <div class="modal-content">
         <h3 style="color:var(--primary);">Help Bot Improve</h3>
         <textarea id="feedback-text" class="modal-textarea" placeholder="Is jawab mein kya kami thi?"></textarea>
         <div style="display:flex; justify-content:flex-end; gap:10px;">
-            <button class="modal-btn" style="background:transparent; color:#9aa0a6;" onclick="closeFeedback()">Cancel</button>
+            <button class="modal-btn" style="background:transparent; color:#9aa0a6;" onclick="closeFeedback('feedback-modal')">Cancel</button>
             <button class="modal-btn" style="background:var(--primary); color:#000;" onclick="saveDetailedFeedback()">Submit</button>
+        </div>
+    </div>
+</div>
+
+<!-- General App Feedback Modal -->
+<div id="general-feedback-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="color:#8ab4f8;">App Feedback</h3>
+        <textarea id="general-feedback-text" class="modal-textarea" placeholder="Aapko TS Bot kaisa laga? Koi naya feature chahiye?"></textarea>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="modal-btn" style="background:transparent; color:#9aa0a6;" onclick="closeFeedback('general-feedback-modal')">Cancel</button>
+            <button class="modal-btn" style="background:#8ab4f8; color:#000;" onclick="submitGeneralFeedback()">Send</button>
         </div>
     </div>
 </div>
@@ -150,10 +177,12 @@
     <div class="cat-item" onclick="selectCat('Google Search 🔍', 'Live Internet')">🔍 Google Search</div>
 </div>
 
-<!-- Input Bar -->
+<!-- Input Bar (Updated with Image Upload) -->
 <div class="footer">
     <div class="input-bar">
         <button class="tool-icon" style="font-size:22px;" onclick="toggleCatMenu()" title="Categories">＋</button>
+        <input type="file" id="image-upload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+        <button class="tool-icon" onclick="document.getElementById('image-upload').click()" title="Upload Image">📎</button>
         <textarea id="main-input" placeholder="Ask TS Bot..." rows="1" oninput="autoResize(this)"></textarea>
         <button class="tool-icon" onclick="startMic()" title="Voice Typing">🎙️</button>
         <button class="tool-icon" style="color:var(--primary); font-size:20px;" onclick="sendMessage()" title="Send">➤</button>
@@ -161,9 +190,8 @@
     <div class="cat-status" id="status-label">MODE: UNIVERSAL MODE</div>
 </div>
 
-
 <script>
-                    // --- FIREBASE CONFIG ---
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyAHVrybvj-G6OlWDhuk6lMYQkfzL0uo13c",
         authDomain: "ts-bot-24442.firebaseapp.com",
@@ -172,8 +200,16 @@
         messagingSenderId: "31578982286",
         appId: "1:31578982286:web:fb393ee8fde147cf74c6df"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+
+    let db = null;
+    let provider = null;
+    try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        provider = new firebase.auth.GoogleAuthProvider();
+    } catch (e) {
+        console.warn("Firebase initialize nahi ho paya. App offline mode mein chalega.");
+    }
 
     // --- INTERNAL MEMORY FALLBACK ---
     const localDB = {
@@ -199,20 +235,45 @@
     window.onload = () => { 
         renderHistory(); 
         updateProfileStats(); 
-        if(history.length === 0 && user) createMsg(`Namaste ${user.name}! Main TS Bot hoon. Aaj kya search karna hai?`, "bot"); 
+        if(history.length === 0 && user) {
+            setTimeout(() => { showTyping(); }, 500);
+            setTimeout(() => {
+                removeTyping();
+                createMsg(`Namaste ${user.name}! Main TS Bot hoon. Aaj aapki kya madad kar sakta hoon?`, "bot"); 
+            }, 1500);
+        }
     };
 
-    // --- AUTHENTICATION ---
-    async function handleAuth() {
-        const name = document.getElementById('reg-name').value.trim();
-        const email = document.getElementById('reg-email').value.trim();
-        if(!name || !email) return alert("Kripya Apna Naam aur Email daalein!");
-        
-        user = { name, email, feedback: { likes: 0, dislikes: 0, logs: [] } };
-        localStorage.setItem('tsUser', JSON.stringify(user));
-        location.reload();
+    // --- GOOGLE AUTHENTICATION ---
+    async function signInWithGoogle() {
+        if(!provider) return alert("Firebase configure nahi hai.");
+        try {
+            const result = await firebase.auth().signInWithPopup(provider);
+            const googleUser = result.user;
+            user = { 
+                name: googleUser.displayName, 
+                email: googleUser.email, 
+                photo: googleUser.photoURL,
+                feedback: { likes: 0, dislikes: 0, logs: [] } 
+            };
+            localStorage.setItem('tsUser', JSON.stringify(user));
+            location.reload();
+        } catch (error) {
+            alert("⚠️ Login fail ho gaya: " + error.message);
+        }
     }
-    function logout() { localStorage.removeItem('tsUser'); location.reload(); }
+
+    function logout() { 
+        if(firebase.auth) {
+            firebase.auth().signOut().then(() => {
+                localStorage.removeItem('tsUser'); 
+                location.reload(); 
+            });
+        } else {
+            localStorage.removeItem('tsUser'); 
+            location.reload();
+        }
+    }
 
     // --- UI CONTROLS ---
     function toggleSidebar(id) {
@@ -239,7 +300,7 @@
     }
     function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 
-    // --- PROFILE STATS ---
+    // --- PROFILE STATS (With Profile Picture) ---
     function updateProfileStats() {
         if(!user) return;
         document.getElementById('p-name').innerText = user.name;
@@ -247,24 +308,48 @@
         document.getElementById('p-chats').innerText = history.length;
         document.getElementById('p-likes').innerText = user.feedback ? user.feedback.likes : 0;
         document.getElementById('p-dislikes').innerText = user.feedback ? user.feedback.dislikes : 0;
-        document.getElementById('av-char').innerText = user.name[0].toUpperCase();
+        
+        const av = document.getElementById('av-char');
+        if (user.photo) {
+            av.innerHTML = `<img src="${user.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        } else {
+            av.innerText = user.name[0].toUpperCase();
+        }
     }
 
-    // --- WIKIPEDIA API ---
+    // --- TYPING EFFECT ---
+    function showTyping() {
+        const box = document.getElementById('chat-box');
+        const div = document.createElement('div');
+        div.className = `row bot-msg`;
+        div.id = 'typing-indicator-row';
+        div.innerHTML = `
+            <div class="typing-indicator">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>`;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+    function removeTyping() {
+        const typingEl = document.getElementById('typing-indicator-row');
+        if (typingEl) typingEl.remove();
+    }
+
+    // --- WIKIPEDIA API (Conversational) ---
     async function fetchFromWiki(query) {
         try {
             const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-            if(res.status === 404) return "Wikipedia par is keyword se related kuch nahi mila. 😔";
+            if(res.status === 404) return `Maaf karna, mujhe <b>"${query}"</b> ke baare mein Wikipedia par kuch nahi mila.`;
             const data = await res.json();
             
             if (data.type === 'standard' || data.type === 'disambiguation') {
-                let html = `<b>Wikipedia Summary:</b> ${data.extract}<br>`;
-                if(data.content_urls) html += `<a href="${data.content_urls.desktop.page}" target="_blank" style="color:var(--primary); font-size:14px; margin-top:5px; display:inline-block;">📖 Read Full Article</a>`;
-                return html;
+                return `Mujhe Wikipedia se iske baare mein yeh jankari mili hai:<br><br>
+                <b>${data.title}</b><br>${data.extract}<br><br>
+                <a href="${data.content_urls.desktop.page}" target="_blank" style="color:var(--primary); font-size:14px; text-decoration:none;">🔗 Poora article padhne ke liye yahan click karein</a>`;
             }
-            return "Maaf karna, exact information nahi mil payi.";
+            return "Maaf karna, main iski poori jankari nahi dhoond paya.";
         } catch (error) {
-            return "⚠️ Internet error. Wikipedia API connect nahi ho paayi.";
+            return "⚠️ Internet mein kuch dikkat hai. Main Wikipedia se connect nahi kar paa raha hoon.";
         }
     }
 
@@ -274,7 +359,6 @@
         const text = input.value.trim();
         if(!text) return;
 
-        // 🔐 SECRET ADMIN PORTAL
         if (text === "tsadmin123") {
             showToast("Accessing Admin Panel...");
             setTimeout(() => { window.location.href = "admin.html"; }, 1500);
@@ -285,40 +369,34 @@
         input.value = "";
         input.style.height = 'auto';
 
+        showTyping(); // Start Typing Animation
+
         setTimeout(async () => {
             let response = "";
             const query = text.toLowerCase();
             
-            // Safe merging of external databases
-            const externalDB = {
-                ...(window.vedaCore || {}), 
-                ...(window.vedaStudy || {}), 
-                ...(window.anime || {}), 
-                ...localDB
-            };
+            const externalDB = { ...(window.vedaCore || {}), ...(window.vedaStudy || {}), ...(window.anime || {}), ...localDB };
 
-            // 1. Wikipedia Mode
             if (currentCat === 'Wikipedia 🌐') {
                 response = await fetchFromWiki(text);
             } 
-            // 2. Google Mode
             else if (currentCat === 'Google Search 🔍') {
-                response = `Searching Live Internet...<br><iframe src="https://www.bing.com/search?q=${encodeURIComponent(text)}" style="width:100%;height:350px;border-radius:10px;margin-top:10px;background:white;border:none;"></iframe>`;
+                response = `Main ek direct AI hoon aur Google search ke results padh nahi sakta, par maine aapke liye ek link tayar kiya hai. Aap yahan click karke apna jawab dekh sakte hain:<br><br>
+                <a href="https://www.google.com/search?q=${encodeURIComponent(text)}" target="_blank" style="background:var(--primary); color:#000; padding:8px 16px; border-radius:20px; text-decoration:none; display:inline-block; font-weight:bold; margin-top:5px;">🌍 Google Par Search Karein</a>`;
             }
-            // 3. Exact Database Match (Case-Insensitive Check)
             else if (externalDB[query]) {
                 response = externalDB[query];
             } 
-            // 4. Default Fallback
             else {
-                response = `Mujhe apni memory mein iska exact match nahi mila.<br><br>
-                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px;" onclick="triggerAutoSearch('Wiki', '${text.replace(/'/g, "\\'")}')">📖 Search Wikipedia</button>
-                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px; margin-left:8px;" onclick="triggerAutoSearch('Google', '${text.replace(/'/g, "\\'")}')">🔍 Search Google</button>`;
+                response = `Mujhe apni memory mein iska exact match nahi mila. Kya main aapke liye isse online dhoondh doon?<br><br>
+                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px; margin-top:10px;" onclick="triggerAutoSearch('Wiki', '${text.replace(/'/g, "\\'")}')">📖 Wikipedia</button>
+                <button class="sidebar-btn" style="width:auto; border-color:var(--primary); color:var(--primary); padding:6px 12px; margin-left:8px; margin-top:10px;" onclick="triggerAutoSearch('Google', '${text.replace(/'/g, "\\'")}')">🔍 Google</button>`;
             }
 
+            removeTyping(); // Stop Typing Animation
             createMsg(response, 'bot');
             saveMessageToCloud(text, response);
-        }, 500);
+        }, 1200);
     }
 
     function triggerAutoSearch(type, text) {
@@ -334,7 +412,6 @@
         const div = document.createElement('div');
         const msgId = "msg-" + Date.now() + Math.random().toString(36).substr(2,5);
         
-        // Added 'msg-row' to safely reference chat bubbles later
         div.className = `row ${sender}-msg msg-row`;
         div.id = msgId;
         
@@ -356,7 +433,7 @@
     }
 
     async function saveMessageToCloud(uText, bText) {
-        if(!user || !user.email) return;
+        if(!user || !user.email || !db) return; 
         try {
             await db.collection("chats").add({
                 user_email: user.email,
@@ -368,6 +445,30 @@
         } catch (error) { console.error("Cloud Error:", error); }
     }
 
+    // --- IMAGE UPLOAD SYSTEM ---
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { showToast("5MB se choti image upload karein!"); return; }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Image = e.target.result;
+            const imgHtml = `<img src="${base64Image}" class="chat-img" alt="Uploaded Image">`;
+            createMsg(imgHtml, 'user');
+            event.target.value = '';
+
+            showTyping();
+            setTimeout(() => {
+                removeTyping();
+                const botReply = "Main abhi is image ko theek se dekh ya samajh nahi sakta, par aap mujhe text mein bata sakte hain ki isme kya hai! 😅";
+                createMsg(botReply, 'bot');
+                saveMessageToCloud("[User Sent an Image]", botReply);
+            }, 1500);
+        };
+        reader.readAsDataURL(file);
+    }
+
     // --- WORKING TOOLS (Mic, Copy, Speak) ---
     function speakText(id) {
         window.speechSynthesis.cancel();
@@ -376,13 +477,11 @@
         s.lang = 'hi-IN';
         window.speechSynthesis.speak(s);
     }
-
     function copyText(id) {
         const text = document.getElementById(id).querySelector('.msg-content').innerText;
         navigator.clipboard.writeText(text);
         showToast("Text Copied!");
     }
-
     function startMic() {
         const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(!Rec) return alert("Voice typing is not supported in this browser.");
@@ -396,7 +495,20 @@
         r.start();
     }
 
-    // --- FEEDBACK SYSTEM ---
+    // --- FEEDBACK SYSTEMS ---
+    function openGeneralFeedback() {
+        closeAll();
+        document.getElementById('general-feedback-modal').style.display = 'flex';
+    }
+    function submitGeneralFeedback() {
+        const text = document.getElementById('general-feedback-text').value.trim();
+        if(!text) return alert("Kripya apna feedback likhein.");
+        if (!user.feedback) user.feedback = { likes: 0, dislikes: 0, logs: [] };
+        user.feedback.logs.push({ type: "General Feedback", issue: text, date: new Date().toLocaleString() });
+        saveUser();
+        closeFeedback('general-feedback-modal');
+        showToast("Feedback ke liye dhanyawad! 🌟");
+    }
     function handleFeedback(msgId, type) {
         const msgEl = document.getElementById(msgId);
         if (!user.feedback) user.feedback = { likes: 0, dislikes: 0, logs: [] };
@@ -412,19 +524,16 @@
             document.getElementById('feedback-modal').style.display = 'flex';
         }
     }
-
-    function closeFeedback() {
-        document.getElementById('feedback-modal').style.display = 'none';
-        document.getElementById('feedback-text').value = "";
+    function closeFeedback(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        if(modalId === 'feedback-modal') document.getElementById('feedback-text').value = "";
+        if(modalId === 'general-feedback-modal') document.getElementById('general-feedback-text').value = "";
     }
-
     function saveDetailedFeedback() {
         const text = document.getElementById('feedback-text').value.trim();
         if(!text) return alert("Please specify the issue.");
 
         const msgEl = document.getElementById(activeMsgIdForFeedback);
-        
-        // Safer way to find the user's last question row
         let query = "Unknown Query";
         let prevEl = msgEl.previousElementSibling;
         while(prevEl) {
@@ -436,18 +545,16 @@
         }
 
         if (!user.feedback) user.feedback = { likes: 0, dislikes: 0, logs: [] };
-        
         user.feedback.dislikes++;
-        user.feedback.logs.push({ query, issue: text, date: new Date().toLocaleString() });
+        user.feedback.logs.push({ type: "Message Dislike", query: query, issue: text, date: new Date().toLocaleString() });
         
         msgEl.querySelector('.dislike-btn').style.color = "#f28b82";
         msgEl.querySelector('.like-btn').style.color = "#9aa0a6";
 
         saveUser();
-        closeFeedback();
+        closeFeedback('feedback-modal');
         showToast("Feedback submitted. 🛠️");
     }
-
     function saveUser() {
         localStorage.setItem('tsUser', JSON.stringify(user));
         updateProfileStats();
@@ -459,39 +566,27 @@
         if(!content || content.trim() === "") return;
         const firstUserMsg = document.querySelector('.user-msg .msg-content');
         const title = firstUserMsg ? firstUserMsg.innerText.substring(0, 20) : "Conversation";
-        
         history.unshift({ id: Date.now(), title: title + "...", data: content });
         localStorage.setItem('tsHistory', JSON.stringify(history));
         renderHistory();
         showToast("Chat Saved! 💾");
     }
-
     function renderHistory() {
         const cont = document.getElementById('history-container');
         if(!cont) return;
         cont.innerHTML = history.map(h => `<button class="sidebar-btn" onclick="loadChat(${h.id})">${h.title}</button>`).join('');
     }
-
     function loadChat(id) {
         const item = history.find(h => h.id == id);
-        if(item) { 
-            document.getElementById('chat-box').innerHTML = item.data; 
-            closeAll(); 
-        }
+        if(item) { document.getElementById('chat-box').innerHTML = item.data; closeAll(); }
     }
-
     function clearAllHistory() {
         if(confirm("Are you sure you want to clear all history?")) { 
-            localStorage.removeItem('tsHistory'); 
-            history = []; 
-            renderHistory(); 
-            startNewChat(); 
+            localStorage.removeItem('tsHistory'); history = []; renderHistory(); startNewChat(); 
         }
     }
-
     function startNewChat() { 
-        document.getElementById('chat-box').innerHTML = ""; 
-        closeAll(); 
+        document.getElementById('chat-box').innerHTML = ""; closeAll(); 
         createMsg(`Mai aapki help Kaise karun?`, "bot"); 
     }
 
@@ -499,7 +594,6 @@
     function showToast(msg) {
         const oldToast = document.getElementById('ts-toast');
         if(oldToast) oldToast.remove();
-
         const toast = document.createElement('div');
         toast.id = 'ts-toast';
         toast.style = "position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#3c4043; color:white; padding:8px 16px; border-radius:20px; font-size:13px; z-index:10005;";
@@ -511,3 +605,4 @@
 
 </body>
 </html>
+
